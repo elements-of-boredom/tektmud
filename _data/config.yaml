@@ -1,0 +1,15 @@
+server:
+  name: "TektMud"
+  seed: "Mud"
+  max_cpu_cores: 0
+  ports: [4000, 4001]
+  max_players: 100
+  idle_timeout_minutes: 30
+  log_level: "Debug"
+paths:
+  root_data_dir: "_data"
+  user_data : "users"
+  world_files: "world"
+  localization: "localization"
+  logs: "logs"
+  templates: "templates"

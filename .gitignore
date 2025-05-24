@@ -1,0 +1,13 @@
+.vscode
+private-notes.txt
+_data/**/users/*
+_data/**/plugin-data/*
+**/config-overrides.yaml
+**/.roundcount
+**/rooms.instances
+vendor/
+server.crt
+server.key
+tmp-gomud.exe
+debug_app.exe
+__debug*
