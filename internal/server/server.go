@@ -11,6 +11,8 @@ import (
 	"sync"
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
+	"tektmud/internal/language"
+	"tektmud/internal/templates"
 	"tektmud/internal/users"
 	"time"
 )
@@ -20,6 +22,7 @@ type MudServer struct {
 	config            *configs.Config
 	connectionManager *connections.ConnectionManager
 	userManager       *users.UserManager
+	templateManager   *templates.TemplateManager
 	listeners         []net.Listener
 	ctx               context.Context
 	cancel            context.CancelFunc
@@ -51,11 +54,17 @@ func NewMudServer(configPath string) (*MudServer, error) {
 		cancel()
 		return nil, fmt.Errorf("failed to create a connection manager %w", err)
 	}
+
+	//Templates & Localization
+	language.Initialize() //make sure i18n support is setup
+	tm := templates.NewTemplateManager()
+
 	//Initalize server components
 	server := &MudServer{
 		config:            config,
 		connectionManager: connMgr,
 		userManager:       userManager,
+		templateManager:   tm,
 		ctx:               ctx,
 		cancel:            cancel,
 	}

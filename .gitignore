@@ -10,6 +10,7 @@ server.crt
 server.key
 tmp-gomud.exe
 debug_app.exe
+debug_app
 __debug*
 .DS_Store*
 **/.DS_Store
