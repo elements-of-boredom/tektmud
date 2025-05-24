@@ -26,7 +26,9 @@ const (
 	StatePassword
 	StateNewPassword
 	StateConfirmPassword
+	StateCollectEmail
 	StateAuthenticated
+	StateRejectedAuthentication
 )
 
 type PlayerConnection struct {

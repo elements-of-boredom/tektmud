@@ -1,5 +1,13 @@
 package users
 
+import "slices"
+
+var (
+	RoleUser    string = "user"
+	RoleAdmin   string = "admin"
+	RoleCreator string = "creator"
+)
+
 type UserRecord struct {
 	Id       uint64   `yaml:"id"`
 	Username string   `yaml:"username"`
@@ -9,4 +17,14 @@ type UserRecord struct {
 
 	connectionId string
 	inputBlocked bool
+}
+
+func (ur *UserRecord) IsAdmin() bool {
+	return slices.Contains(ur.Roles, RoleAdmin)
+}
+func (ur *UserRecord) IsCreator() bool {
+	return slices.Contains(ur.Roles, RoleCreator)
+}
+func (ur *UserRecord) HasRole(role string) bool {
+	return slices.Contains(ur.Roles, role)
 }

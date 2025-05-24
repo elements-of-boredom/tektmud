@@ -11,3 +11,5 @@ server.key
 tmp-gomud.exe
 debug_app.exe
 __debug*
+.DS_Store*
+**/.DS_Store

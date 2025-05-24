@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
+	"path/filepath"
 	"strings"
 	"sync"
 	configs "tektmud/internal/config"
@@ -36,8 +37,10 @@ func NewMudServer(configPath string) (*MudServer, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	//initialize our UserManager
-	userManager, err := users.NewUserManager("users.idx", "users")
+	userDir := filepath.Join(config.Paths.RootDataDir, config.Paths.UserData)
+	userManager, err := users.NewUserManager("users.idx", userDir)
 	if err != nil {
+		cancel()
 		return nil, fmt.Errorf("failed to create a usermanager: %w", err)
 	}
 
@@ -222,6 +225,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 	pc.SetState(connections.StateUsername)
 
+	loginData := make(map[string]any)
 	//Handle login loop.
 	for {
 		select {
@@ -247,22 +251,26 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 			//This returns false until they can get through login
 			//either with existing account, or new.
-			if s.processLoginInput(pc, input) {
+			if s.processLoginInput(pc, input, loginData) {
 				//If we make it to here, we are through login (or user creation)
 				//Add the player to the world manager
 				//pass into our "game loop" that handles commands from the player
-
+				loginData = nil
 				slog.Info("Player logged in.", "player", pc.Username, "id", pc.Id)
 
 				s.handlePlayerSession(pc)
 				return //If we ever leave handlePlayerSession our defer will cleanup.
+			}
+
+			if pc.GetState() == connections.StateRejectedAuthentication {
+				return
 			}
 		}
 	}
 
 }
 
-func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string) bool {
+func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]any) bool {
 	switch pc.GetState() {
 	case connections.StateUsername:
 		if input == "" {
@@ -270,33 +278,87 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			s.sendToPlayer(pc, "What is your name?")
 			return false
 		}
-
 		pc.Username = input
 
 		//Lookup the player
-		_, err := s.userManager.GetUserByUsername(input)
+		user, err := s.userManager.GetUserByUsername(input)
 		if err != nil {
 			//New User
-			s.sendToPlayer(pc, "Welcome new player!. Choose a password.")
+			s.sendToPlayer(pc, "Welcome new player! Choose a password.")
 			pc.SetState(connections.StateNewPassword)
 		} else {
 			//Existing user
+			stateData["userid"] = user.Id
 			s.sendToPlayer(pc, "Enter your password.")
 			pc.SetState(connections.StatePassword)
 		}
 		return false //We haven't completed login
 
 	case connections.StatePassword:
-		//Validate the user's password. For now we are gonna auto-pass TODO
-		s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!", pc.Username))
-		pc.SetState(connections.StateAuthenticated)
-		return true //login complete
+		userId, exists := stateData["userid"]
+		if !exists {
+			//Should never get here but...
+			s.sendToPlayer(pc, "What is your name?")
+			return false
+		}
+		userId64, ok := userId.(uint64)
+		if !ok {
+			slog.Error("Some how we cannot parse our userId")
+			s.sendToPlayer(pc, "What is your name?")
+			return false
+		}
+		//Finally, validate their password against their existing password.
+		if s.userManager.ValidatePassword(input, userId64) {
+			s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!", pc.Username))
+			pc.SetState(connections.StateAuthenticated)
+			return true //login complete
+		} else {
+			tries, ok := stateData["attempts"]
+			if !ok {
+				tries = 1
+			}
+			triesInt := tries.(int)
+			if triesInt < 3 {
+				s.sendToPlayer(pc, "Invalid password. Try again.")
+			} else {
+				s.sendToPlayer(pc, "Maximum password attempts met. Goodbye!")
+				pc.SetState(connections.StateRejectedAuthentication)
+			}
+		}
+		return false //Something didn't work right
 
 	case connections.StateNewPassword:
 		//Validate the user's password. For now we are gonna auto-pass TODO
-		s.sendToPlayer(pc, fmt.Sprintf("You are rembered, %s!", pc.Username))
+		valid := s.userManager.PasswordMeetsMinimums(input, pc.Username)
+		if !valid {
+			s.sendToPlayer(pc, "Passwords must be at least 6 characters, and cannot be your username.\r\nChoose a password:")
+			return false
+		}
+		//password was good, throw it in cache, and confirm it.
+		stateData["password"] = input
+		s.sendToPlayer(pc, fmt.Sprintf("Please confirm your password, %s", pc.Username))
+		pc.SetState(connections.StateConfirmPassword)
+		return false
+
+	case connections.StateConfirmPassword:
+		if input == stateData["password"] {
+			s.sendToPlayer(pc, "Would you like to associate an email address? Without one, you will be unable to recover your account if you forget your password. If so, enter one now, or simply press enter to continue. \r\n(You may also set one later in game.)")
+			pc.SetState(connections.StateCollectEmail)
+			return false
+		}
+
+		s.sendToPlayer(pc, "Those passwords did not match. Please try again.")
+		s.sendToPlayer(pc, "Welcome new player! Choose a password.")
+		pc.SetState(connections.StateNewPassword)
+		return false
+
+	case connections.StateCollectEmail:
+		passString := stateData["password"].(string)
+
+		s.userManager.CreateUser(pc.Username, passString, input)
+		//set authenticated
 		pc.SetState(connections.StateAuthenticated)
-		return true //login complete
+		return true
 	}
 
 	//our catchall
