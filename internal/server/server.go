@@ -36,6 +36,10 @@ func NewMudServer(configPath string) (*MudServer, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	//initialize our UserManager
+	userManager, err := users.NewUserManager("users.idx", "users")
+	if err != nil {
+		return nil, fmt.Errorf("failed to create a usermanager: %w", err)
+	}
 
 	connMgr, err := connections.NewConnectionManager(config)
 	if err != nil {
@@ -48,6 +52,7 @@ func NewMudServer(configPath string) (*MudServer, error) {
 	server := &MudServer{
 		config:            config,
 		connectionManager: connMgr,
+		userManager:       userManager,
 		ctx:               ctx,
 		cancel:            cancel,
 	}
@@ -284,6 +289,12 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 	case connections.StatePassword:
 		//Validate the user's password. For now we are gonna auto-pass TODO
 		s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!", pc.Username))
+		pc.SetState(connections.StateAuthenticated)
+		return true //login complete
+
+	case connections.StateNewPassword:
+		//Validate the user's password. For now we are gonna auto-pass TODO
+		s.sendToPlayer(pc, fmt.Sprintf("You are rembered, %s!", pc.Username))
 		pc.SetState(connections.StateAuthenticated)
 		return true //login complete
 	}
