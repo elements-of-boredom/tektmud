@@ -1,12 +1,17 @@
 package users
 
 import (
+	"crypto/rand"
+	"encoding/base64"
+	"encoding/binary"
 	"fmt"
+	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 	configs "tektmud/internal/config"
 
+	"golang.org/x/crypto/argon2"
 	"gopkg.in/yaml.v3"
 )
 
@@ -16,6 +21,12 @@ type UserManager struct {
 	mu        sync.RWMutex
 	userIndex *UserIndex
 	users     map[uint64]*UserRecord
+}
+
+type HashSalt struct {
+	Version uint16
+	Salt    []byte
+	Hash    []byte
 }
 
 // Creates a new UserManager Instance
@@ -105,7 +116,7 @@ func (um *UserManager) ValidatePassword(input string, userId uint64) bool {
 	if user, err := um.GetUserById(userId); err != nil {
 		return false
 	} else {
-		return user.Password == input
+		return um.comparePassword(input, user.Password)
 	}
 }
 
@@ -120,10 +131,15 @@ func (um *UserManager) CreateUser(username string, password string, email string
 		return nil, fmt.Errorf("user '%s' already exists", username)
 	}
 
+	encryptedPassword, err := um.encryptedPassword(password)
+	if err != nil {
+		return nil, fmt.Errorf("encryption of user '%s' password failed", username)
+	}
+
 	user := &UserRecord{
 		Id:       um.userIndex.NextUserId,
 		Username: username,
-		Password: password, //TODO: Encrypt
+		Password: encryptedPassword,
 		Roles:    []string{RoleUser},
 	}
 
@@ -157,4 +173,64 @@ func (um *UserManager) saveUserFile(user *UserRecord, path string) error {
 		return err
 	}
 	return os.WriteFile(path, data, 0644)
+}
+
+// Generate a hash of the password provided.
+func (um *UserManager) encryptedPassword(password string) (string, error) {
+	var err error
+
+	//generate a random salt.
+	salt, err := randomSecret(16)
+	if err != nil {
+		return "", err
+	}
+
+	encoded := hashPassword(password, salt)
+	return encoded, nil
+}
+
+func hashPassword(password string, salt []byte) string {
+	hash := argon2.IDKey([]byte(password), salt, 5, 7168, 1, 32)
+	hs := &HashSalt{
+		Version: uint16(1),
+		Hash:    hash,
+		Salt:    salt,
+	}
+	result := make([]byte, 50) //2 + 16 + 32
+	binary.LittleEndian.PutUint16(result[0:2], hs.Version)
+	copy(result[2:18], hs.Salt)
+	copy(result[18:50], hs.Hash)
+
+	encoded := base64.StdEncoding.EncodeToString(result)
+	return encoded
+}
+
+func (um *UserManager) comparePassword(input string, existing string) bool {
+
+	existingHS, err := base64.StdEncoding.DecodeString(existing)
+	if err != nil {
+		slog.Error("Unable to decode existing password", "error", err)
+		return false
+	}
+
+	oldHs := &HashSalt{
+		Version: binary.LittleEndian.Uint16(existingHS[0:2]),
+		Salt:    existingHS[2:18],
+		Hash:    existingHS[18:50],
+	}
+
+	//Ok we have our salt, now
+	encrypted := hashPassword(input, oldHs.Salt)
+	return encrypted == existing
+
+}
+
+func randomSecret(length uint32) ([]byte, error) {
+	secret := make([]byte, length)
+
+	_, err := rand.Read(secret)
+	if err != nil {
+		return nil, err
+	}
+	return secret, nil
 }

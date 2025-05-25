@@ -227,8 +227,12 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 	}(pc.Id)
 
 	//Send the initial welcome message/Splash text
-	//TODO: Template with splash
-
+	output, err := s.templateManager.Process("login/welcome-splash")
+	if err != nil {
+		slog.Error("Prompt template error", "template", "login/welcome-splash", "error", err)
+		output = fmt.Sprintf("Error generating propt template '%s'", "splash")
+	}
+	s.sendToPlayer(pc, output)
 	s.sendToPlayer(pc, fmt.Sprintf("Welcome to %s!", s.config.Server.Name))
 	s.sendToPlayer(pc, "What is your name?")
 

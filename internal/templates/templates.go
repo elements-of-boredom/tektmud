@@ -186,6 +186,26 @@ func NewTemplateManager() *TemplateManager {
 	}
 }
 
+func (tm *TemplateManager) Process(templateName string, maybeData ...any) (string, error) {
+
+	var data any
+	if len(maybeData) > 0 {
+		data = maybeData[0]
+	}
+
+	reload := strings.HasPrefix(templateName, "login")
+	if err := tm.LoadTemplate(templateName, reload); err != nil {
+		return "[Error loading template]", err
+	}
+
+	output, err := tm.Execute(templateName, data)
+	if err != nil {
+		return "[Error executing template]", err
+	}
+
+	return output, nil
+}
+
 // This approach assumes we -always- want to cache a template
 // that may not scale at some point. May need to handle differently
 // or expire cache or something
