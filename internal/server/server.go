@@ -14,6 +14,7 @@ import (
 	"tektmud/internal/language"
 	"tektmud/internal/templates"
 	"tektmud/internal/users"
+	"tektmud/internal/world"
 	"time"
 )
 
@@ -22,6 +23,7 @@ type MudServer struct {
 	config            *configs.Config
 	connectionManager *connections.ConnectionManager
 	userManager       *users.UserManager
+	worldManager      *world.WorldManager
 	templateManager   *templates.TemplateManager
 	listeners         []net.Listener
 	ctx               context.Context
@@ -59,12 +61,21 @@ func NewMudServer(configPath string) (*MudServer, error) {
 	language.Initialize() //make sure i18n support is setup
 	tm := templates.NewTemplateManager()
 
+	//bootup our world manager
+	wm := world.NewWorldManager()
+	if err := wm.Initialize(userManager); err != nil {
+		//We need to bail if this errored.
+		cancel()
+		return nil, fmt.Errorf("failed to initialize the world manager %w", err)
+	}
+
 	//Initalize server components
 	server := &MudServer{
 		config:            config,
 		connectionManager: connMgr,
 		userManager:       userManager,
 		templateManager:   tm,
+		worldManager:      wm,
 		ctx:               ctx,
 		cancel:            cancel,
 	}
@@ -77,7 +88,7 @@ func (s *MudServer) Initialize() error {
 
 	//Create any of our data directories that may be empty.
 	//load any required things
-
+	s.worldManager.Start()
 	return nil
 }
 

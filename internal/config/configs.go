@@ -16,6 +16,7 @@ var (
 type Config struct {
 	Server Server `yaml:"server"`
 	Paths  Paths  `yaml:"paths"`
+	Core   Core   `yaml:"core"`
 }
 
 func GetConfig() Config {

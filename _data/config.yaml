@@ -13,3 +13,7 @@ paths:
   localization: "localization"
   logs: "logs"
   templates: "templates"
+core:
+  tick_rate : 100
+  default_area: "newbie"
+  default_room: "void"
