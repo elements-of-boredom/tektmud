@@ -10,9 +10,9 @@ type BuilderHelpHandler struct {
 	BaseHandler
 }
 
-func NewAdminHelpHandler() *BuilderHelpHandler {
+func NewBuilderHelpHandler() *BuilderHelpHandler {
 	return &BuilderHelpHandler{
-		BaseHandler: NewBaseHandler("admin_help", 950),
+		BaseHandler: NewBaseHandler("builder_help", 950),
 	}
 }
 
@@ -27,7 +27,7 @@ func (h *BuilderHelpHandler) Handle(ctx *InputContext) (HandlerResult, error) {
 		return HandlerContinue, nil
 	}
 
-	if len(ctx.Args) == 0 || (len(ctx.Args) > 0 && ctx.Args[0] != "admin") {
+	if len(ctx.Args) == 0 || (len(ctx.Args) > 0 && ctx.Args[0] != "buliding") {
 		return HandlerContinue, nil
 	}
 
@@ -42,7 +42,7 @@ func (h *BuilderHelpHandler) getBuilderHelp(roles []character.AdminRole) string 
 	var adminHelp string = ""
 	if slices.Contains(roles, character.AdminRoleBuilder) {
 		builderHelp = `
-Admin Commands Available:
+Building Commands Available:
 
 WORLD BUILDING:
   acreate <id> <name>     - Create a new area
@@ -71,6 +71,7 @@ EXAMPLES:
 `
 	}
 
+	//TODO Move to owner help.
 	if slices.Contains(roles, character.AdminRoleAdmin) {
 		adminHelp = `
 OWNER COMMANDS:

@@ -133,6 +133,32 @@ func (ac *AdminContext) RemovePermission(permission string) {
 	}
 }
 
+// AddRole adds a role to the admin context
+func (ac *AdminContext) AddRole(role AdminRole) {
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+
+	// Check if role already exists
+	if ac.HasRole(role) {
+		return
+	}
+
+	ac.Roles = append(ac.Roles, role)
+}
+
+// RemoveRole removes a role from the admin context
+func (ac *AdminContext) RemoveRole(role AdminRole) {
+	ac.mu.Lock()
+	defer ac.mu.Unlock()
+
+	for i, r := range ac.Roles {
+		if r == role {
+			ac.Roles = slices.Delete(ac.Roles, i, i+1)
+			return
+		}
+	}
+}
+
 // IsAdmin checks if the context has any admin roles
 func (ac *AdminContext) IsAdmin() bool {
 	ac.mu.RLock()

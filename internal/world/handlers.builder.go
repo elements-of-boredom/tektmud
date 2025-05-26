@@ -15,7 +15,7 @@ type BuilderHandler struct {
 
 func NewBuilderHandler() *BuilderHandler {
 	return &BuilderHandler{
-		BaseHandler: NewBaseHandler("admin", 10), // High priority
+		BaseHandler: NewBaseHandler("builder", 10), // High priority
 	}
 }
 

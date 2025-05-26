@@ -465,12 +465,16 @@ func (wm *WorldManager) registerHandlers() {
 	look := NewLookHandler()
 	say := NewSayHandler()
 	defaultHandler := NewDefaultHandler()
+	builder := NewBuilderHandler()
+	builderHelp := NewBuilderHelpHandler()
 
 	wm.inputHandlers = map[string]InputHandler{
-		quit.Name():     quit,
-		movement.Name(): movement,
-		look.Name():     look,
-		say.Name():      say,
+		quit.Name():        quit,
+		movement.Name():    movement,
+		look.Name():        look,
+		say.Name():         say,
+		builder.Name():     builder,
+		builderHelp.Name(): builderHelp,
 
 		//ALWAYS LAST
 		defaultHandler.Name(): defaultHandler,
@@ -479,7 +483,7 @@ func (wm *WorldManager) registerHandlers() {
 }
 
 // setupDefaultHandlers adds standard handlers to a character
-func (wm *WorldManager) setupDefaultHandlers(character *character.Character) {
+func (wm *WorldManager) setupDefaultHandlers(c *character.Character) {
 
 	// Add admin handlers if character is an admin
 	/*
@@ -494,9 +498,16 @@ func (wm *WorldManager) setupDefaultHandlers(character *character.Character) {
 	//character.AddHandler(NewAttackHandler()) // Combat commands
 
 	//TODO: Fix this ugly string crap
-	character.AddHandler("quit")
-	character.AddHandler("movement")
-	character.AddHandler("look")
-	character.AddHandler("say")
-	character.AddHandler("default") // Always last
+	c.AddHandler("quit")
+	c.AddHandler("movement")
+	c.AddHandler("look")
+	c.AddHandler("say")
+	c.AddHandler("default") // Always last
+
+	if c.AdminCtx != nil {
+		if c.AdminCtx.HasRole(character.AdminRoleBuilder) || c.AdminCtx.HasRole(character.AdminRoleOwner) {
+			c.AddHandler("builder")
+			c.AddHandler("builder_help")
+		}
+	}
 }
