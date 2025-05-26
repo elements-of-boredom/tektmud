@@ -109,7 +109,7 @@ func (tm *TickManager) QueueAction(action *Action) {
 		tm.nextActionId++
 		action.Id = fmt.Sprintf("action_%d", tm.nextActionId)
 	}
-
+	slog.Debug("Pushing action onto queue", "id", action.Id)
 	heap.Push(&tm.queue, action)
 }
 
@@ -128,21 +128,21 @@ func (tm *TickManager) QueueDelayedAction(actionType ActionType, delay time.Dura
 
 // ProcessTick process all actions that are ready to execute
 func (tm *TickManager) ProcessTick(wm *WorldManager) {
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
 
 	tm.tickCount++
 	now := time.Now()
 
 	//Process everything read
 	for tm.queue.Len() > 0 {
+		tm.mu.Lock()
 		next := tm.queue[0]
 		if next.ExecuteAt.After(now) {
 			break //
 		}
 
 		action := heap.Pop(&tm.queue).(*Action) //Pop off queue and return type to Action
-
+		slog.Debug("Popped item off queue", "id", action.Id)
+		tm.mu.Unlock()
 		if action.Callback != nil {
 			if err := action.Callback(action, wm); err != nil {
 				slog.Error("Error executing action", "action", action.Id, "err", err)
@@ -216,7 +216,7 @@ func PlayerCommandCallback(action *Action, wm *WorldManager) error {
 		id = 0
 	}
 
-	return wm.HandleInput(id, fullCommand)
+	return wm.HandleInputDirect(id, fullCommand)
 }
 
 // HeartbeatCallback handles periodic world updates

@@ -10,6 +10,7 @@ import (
 
 func main() {
 
+	slog.SetLogLoggerLevel(slog.LevelDebug)
 	//create our server
 	server, err := server.NewMudServer("_data/config.yaml")
 	if err != nil {

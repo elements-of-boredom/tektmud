@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"tektmud/internal/character"
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
 	"tektmud/internal/language"
@@ -62,8 +63,8 @@ func NewMudServer(configPath string) (*MudServer, error) {
 	tm := templates.NewTemplateManager()
 
 	//bootup our world manager
-	wm := world.NewWorldManager()
-	if err := wm.Initialize(userManager); err != nil {
+	wm := world.NewWorldManager(userManager)
+	if err := wm.Initialize(); err != nil {
 		//We need to bail if this errored.
 		cancel()
 		return nil, fmt.Errorf("failed to initialize the world manager %w", err)
@@ -275,14 +276,17 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 			//This returns false until they can get through login
 			//either with existing account, or new.
-			if s.processLoginInput(pc, input, loginData) {
+			if userId, success := s.processLoginInput(pc, input, loginData); success {
 				//If we make it to here, we are through login (or user creation)
 				//Add the player to the world manager
 				//pass into our "game loop" that handles commands from the player
+				//Add our user to the world
+				char := character.NewCharacter(userId, pc.Username)
+				s.worldManager.AddCharacter(char, pc)
 				loginData = nil
-				slog.Info("Player logged in.", "player", pc.Username, "id", pc.Id)
+				slog.Info("Player logged in.", "player", pc.Username, "connection-id", pc.Id)
 
-				s.handlePlayerSession(pc)
+				s.handlePlayerSession(userId, pc)
 				return //If we ever leave handlePlayerSession our defer will cleanup.
 			}
 
@@ -294,13 +298,13 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 }
 
-func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]any) bool {
+func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]any) (uint64, bool) {
 	switch pc.GetState() {
 	case connections.StateUsername:
 		if input == "" {
 			//Just resend them the username question
 			s.sendToPlayer(pc, "What is your name?")
-			return false
+			return 0, false
 		}
 		pc.Username = input
 
@@ -316,26 +320,32 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			s.sendToPlayer(pc, "Enter your password.")
 			pc.SetState(connections.StatePassword)
 		}
-		return false //We haven't completed login
+		return 0, false //We haven't completed login
 
 	case connections.StatePassword:
 		userId, exists := stateData["userid"]
 		if !exists {
 			//Should never get here but...
 			s.sendToPlayer(pc, "What is your name?")
-			return false
+			return 0, false
 		}
 		userId64, ok := userId.(uint64)
 		if !ok {
 			slog.Error("Some how we cannot parse our userId")
 			s.sendToPlayer(pc, "What is your name?")
-			return false
+			return 0, false
 		}
 		//Finally, validate their password against their existing password.
 		if s.userManager.ValidatePassword(input, userId64) {
 			s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!", pc.Username))
 			pc.SetState(connections.StateAuthenticated)
-			return true //login complete
+
+			ur, err := s.userManager.GetUserById(userId64)
+			if err != nil {
+				slog.Error("Unable to find the user after validation. Sems impossible", "error", err)
+			}
+
+			return ur.Id, true //login complete
 		} else {
 			tries, ok := stateData["attempts"]
 			if !ok {
@@ -349,48 +359,53 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				pc.SetState(connections.StateRejectedAuthentication)
 			}
 		}
-		return false //Something didn't work right
+		return 0, false //Something didn't work right
 
 	case connections.StateNewPassword:
 		//Validate the user's password. For now we are gonna auto-pass TODO
 		valid := s.userManager.PasswordMeetsMinimums(input, pc.Username)
 		if !valid {
 			s.sendToPlayer(pc, "Passwords must be at least 6 characters, and cannot be your username.\r\nChoose a password:")
-			return false
+			return 0, false
 		}
 		//password was good, throw it in cache, and confirm it.
 		stateData["password"] = input
 		s.sendToPlayer(pc, fmt.Sprintf("Please confirm your password, %s", pc.Username))
 		pc.SetState(connections.StateConfirmPassword)
-		return false
+		return 0, false
 
 	case connections.StateConfirmPassword:
 		if input == stateData["password"] {
 			s.sendToPlayer(pc, "Would you like to associate an email address? Without one, you will be unable to recover your account if you forget your password. If so, enter one now, or simply press enter to continue. \r\n(You may also set one later in game.)")
 			pc.SetState(connections.StateCollectEmail)
-			return false
+			return 0, false
 		}
 
 		s.sendToPlayer(pc, "Those passwords did not match. Please try again.")
 		s.sendToPlayer(pc, "Welcome new player! Choose a password.")
 		pc.SetState(connections.StateNewPassword)
-		return false
+		return 0, false
 
 	case connections.StateCollectEmail:
 		passString := stateData["password"].(string)
 
-		s.userManager.CreateUser(pc.Username, passString, input)
+		ur, err := s.userManager.CreateUser(pc.Username, passString, input)
+		if err != nil {
+			s.sendToPlayer(pc, "Error creating player, please try again.")
+			pc.SetState(connections.StateRejectedAuthentication)
+		}
+		slog.Info("Created user", "username", ur.Username)
 		//set authenticated
 		pc.SetState(connections.StateAuthenticated)
-		return true
+		return ur.Id, true
 	}
 
 	//our catchall
-	return false
+	return 0, false
 }
 
 // This is our ultimate game loop for input mgmt.
-func (s *MudServer) handlePlayerSession(pc *connections.PlayerConnection) {
+func (s *MudServer) handlePlayerSession(playerId uint64, pc *connections.PlayerConnection) {
 	//For now we are just going to tell us how to exit
 	//and otehrwise echo stuff back.
 	s.sendToPlayer(pc, "Your are now in the game! type 'quit' to exit.")
@@ -407,13 +422,16 @@ func (s *MudServer) handlePlayerSession(pc *connections.PlayerConnection) {
 			}
 
 			input := strings.TrimSpace(line)
-			if input == "quit" {
-				s.sendToPlayer(pc, "Goodbye!")
-				return
-			}
+			/*
+				if input == "quit" {
+					s.sendToPlayer(pc, "Goodbye!")
+					return
+				}
 
-			//Otherwise echo back
-			s.sendToPlayer(pc, fmt.Sprintf("You said: '%s'", input))
+				//Otherwise echo back
+				s.sendToPlayer(pc, fmt.Sprintf("You said: '%s'", input))
+			*/
+			s.worldManager.HandleInput(playerId, input)
 		}
 	}
 }

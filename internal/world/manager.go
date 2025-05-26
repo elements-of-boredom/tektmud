@@ -249,9 +249,6 @@ func (wm *WorldManager) HandleInputDirect(characterId uint64, input string) erro
 
 // AddCharacter brings a character into the world
 func (wm *WorldManager) AddCharacter(character *character.Character, conn *connections.PlayerConnection) error {
-	wm.mu.Lock()
-	defer wm.mu.Unlock()
-
 	// Set up default handlers if character has none
 	if len(character.Handlers) == 0 {
 		wm.setupDefaultHandlers(character)
@@ -262,10 +259,11 @@ func (wm *WorldManager) AddCharacter(character *character.Character, conn *conne
 	character.SetLocation(areaID, roomID)
 
 	// Add to world
+	wm.mu.Lock()
 	wm.characters[character.Id] = character
 	wm.connections[character.Id] = conn
 	wm.addToRoom(character, areaID, roomID)
-
+	wm.mu.Unlock()
 	// Start regeneration for this character
 	//wm.startCharacterRegeneration(character.Id)
 
@@ -391,13 +389,13 @@ func (wm *WorldManager) ShowRoom(character *character.Character) {
 }
 
 // addToRoom adds a character to a room's occupant list
-func (wm *WorldManager) addToRoom(character *character.Character, areaID, roomID string) {
+func (wm *WorldManager) addToRoom(c *character.Character, areaID, roomID string) {
 	roomKey := areaID + ":" + roomID
 	if wm.roomOccupants[roomKey] == nil {
 		var charmap = make(map[uint64]*character.Character)
 		wm.roomOccupants[roomKey] = charmap
 	}
-	wm.roomOccupants[roomKey][character.Id] = character
+	wm.roomOccupants[roomKey][c.Id] = c
 }
 
 // removeFromRoom removes a character from a room's occupant list
@@ -427,10 +425,10 @@ func (wm *WorldManager) SendToCharacter(character *character.Character, message 
 // SendToRoom sends a message to all characters in a room except excluded ones
 func (wm *WorldManager) SendToRoom(areaID, roomID, message string, excludeIDs ...uint64) {
 	wm.mu.RLock()
+	defer wm.mu.RUnlock()
 	roomKey := areaID + ":" + roomID
 	occupants, exists := wm.roomOccupants[roomKey]
 	if !exists {
-		wm.mu.RUnlock()
 		return
 	}
 
@@ -448,7 +446,6 @@ func (wm *WorldManager) SendToRoom(areaID, roomID, message string, excludeIDs ..
 			}
 		}
 	}
-	wm.mu.RUnlock()
 }
 
 func (wm *WorldManager) registerHandlers() {

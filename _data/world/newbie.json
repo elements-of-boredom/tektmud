@@ -1,0 +1,111 @@
+{
+  "id": "newbie",
+  "name": "Newbie Training Grounds",
+  "description": "A safe area for new adventurers to learn the basics",
+  "properties": {
+    "safe_zone": "true",
+    "level_range": "1-5"
+  },
+  "rooms": {
+    "start": {
+      "id": "start",
+      "title": "The Training Hall",
+      "description": "You stand in a large, well-lit hall with polished wooden floors. Training dummies line the walls, and helpful signs explain the basic commands. A large banner reads 'Welcome New Adventurers!'",
+      "exits": [
+        {
+          "direction": "north",
+          "destination": "courtyard",
+          "description": "A doorway leads north to an outdoor courtyard."
+        },
+        {
+          "direction": "east",
+          "destination": "armory",
+          "description": "An archway leads east to what looks like an armory."
+        },
+        {
+          "direction": "west",
+          "destination": "library",
+          "description": "A quiet doorway leads west to a library."
+        }
+      ]
+    },
+    "courtyard": {
+      "id": "courtyard",
+      "title": "Training Courtyard",
+      "description": "You are in a peaceful outdoor courtyard surrounded by high stone walls. The sun shines down warmly, and you can hear the sound of steel on steel from practice sessions. Several training dummies are scattered around.",
+      "exits": [
+        {
+          "direction": "south",
+          "destination": "start",
+          "description": "The training hall lies to the south."
+        },
+        {
+          "direction": "up",
+          "destination": "tower",
+          "description": "Stone steps lead up to a watchtower."
+        },
+        {
+          "direction": "special",
+          "destination": "secret_room",
+          "hidden": true,
+          "keywords": ["crack", "wall", "stone"],
+          "description": "There's a crack in the eastern wall."
+        }
+      ]
+    },
+    "armory": {
+      "id": "armory",
+      "title": "The Armory",
+      "description": "Racks of practice weapons line the walls of this small room. Everything here is designed for training rather than real combat, but they'll serve you well while learning.",
+      "exits": [
+        {
+          "direction": "west",
+          "destination": "start",
+          "description": "The training hall is back to the west."
+        }
+      ]
+    },
+    "library": {
+      "id": "library",
+      "title": "The Training Library",
+      "description": "Shelves of books about combat techniques, magic theory, and world history fill this quiet room. Several comfortable chairs are arranged around reading tables.",
+      "exits": [
+        {
+          "direction": "east",
+          "destination": "start",
+          "description": "The training hall is to the east."
+        }
+      ]
+    },
+    "tower": {
+      "id": "tower",
+      "title": "Watchtower Top",
+      "description": "From this elevated position, you can see for miles in every direction. The training grounds spread out below you, and in the distance you can make out other areas of the world waiting to be explored.",
+      "exits": [
+        {
+          "direction": "down",
+          "destination": "courtyard",
+          "description": "Stone steps lead back down to the courtyard."
+        },
+        {
+          "direction": "north",
+          "destination": "forest:entrance",
+          "description": "A rope ladder leads down the north side of the tower toward a forest."
+        }
+      ]
+    },
+    "secret_room": {
+      "id": "secret_room",
+      "title": "Hidden Chamber",
+      "description": "You've discovered a secret chamber behind the courtyard wall! Ancient runes glow faintly on the walls, and you sense that this place holds mysteries waiting to be uncovered.",
+      "exits": [
+        {
+          "direction": "special",
+          "destination": "courtyard",
+          "keywords": ["crack", "exit", "out"],
+          "description": "The crack in the wall leads back to the courtyard."
+        }
+      ]
+    }
+  }
+}

@@ -16,4 +16,4 @@ paths:
 core:
   tick_rate : 100
   default_area: "newbie"
-  default_room: "void"
+  default_room: "start"
