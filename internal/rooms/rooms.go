@@ -47,9 +47,30 @@ var DirectionAliases = map[string]Direction{
 	"d":  Down,
 }
 
+var ReverseDirections = map[Direction]Direction{
+	North:     South,
+	South:     North,
+	East:      West,
+	West:      East,
+	Northeast: Southwest,
+	Southwest: Northeast,
+	Southeast: Northwest,
+	Northwest: Southeast,
+	Up:        Down,
+	Down:      Up,
+}
+
+func GetReverseDirection(dir Direction) Direction {
+
+	if reverse, exists := ReverseDirections[dir]; exists {
+		return reverse
+	}
+	return Special // For special exits, return special
+}
+
 // Area represents a collection of rooms
 type Area struct {
-	ID          string            `json:"id"`
+	Id          string            `json:"id"`
 	Name        string            `json:"name"`
 	Description string            `json:"description"`
 	Rooms       map[string]*Room  `json:"rooms"`
@@ -58,11 +79,11 @@ type Area struct {
 
 // Room represents a location in the game world
 type Room struct {
-	ID          string            `json:"id"`
+	Id          string            `json:"id"`
 	Title       string            `json:"title"`
 	Description string            `json:"description"`
 	Exits       []Exit            `json:"exits"`
-	AreaID      string            `json:"area_id"`
+	AreaId      string            `json:"area_id"`
 	Properties  map[string]string `json:"properties,omitempty"` // Custom room properties
 }
 
@@ -115,10 +136,10 @@ func (am *AreaManager) LoadArea(areaID string) error {
 
 	// Set area ID for all rooms
 	for _, room := range area.Rooms {
-		room.AreaID = area.ID
+		room.AreaId = area.Id
 	}
 
-	am.areas[area.ID] = &area
+	am.areas[area.Id] = &area
 	return nil
 }
 
@@ -154,6 +175,12 @@ func (am *AreaManager) GetArea(areaID string) (*Area, bool) {
 
 	area, exists := am.areas[areaID]
 	return area, exists
+}
+
+func (am *AreaManager) UpsertArea(areaId string, area *Area) {
+	am.mu.Lock()
+	defer am.mu.Unlock()
+	am.areas[areaId] = area
 }
 
 // GetRoom returns a room by area and room ID

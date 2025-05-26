@@ -5,7 +5,8 @@ import "slices"
 var (
 	RoleUser    string = "user"
 	RoleAdmin   string = "admin"
-	RoleCreator string = "creator"
+	RoleBuilder string = "builder"
+	RoleOwner   string = "owner"
 )
 
 type UserRecord struct {
@@ -14,16 +15,16 @@ type UserRecord struct {
 	Email    string   `yaml:"email"`
 	Password string   `yaml:"password"`
 	Roles    []string `yaml:"roles"`
-
-	connectionId string
-	inputBlocked bool
 }
 
 func (ur *UserRecord) IsAdmin() bool {
 	return slices.Contains(ur.Roles, RoleAdmin)
 }
-func (ur *UserRecord) IsCreator() bool {
-	return slices.Contains(ur.Roles, RoleCreator)
+func (ur *UserRecord) IsBuilder() bool {
+	return slices.Contains(ur.Roles, RoleBuilder)
+}
+func (ur *UserRecord) IsOwner() bool {
+	return slices.Contains(ur.Roles, RoleOwner)
 }
 func (ur *UserRecord) HasRole(role string) bool {
 	return slices.Contains(ur.Roles, role)

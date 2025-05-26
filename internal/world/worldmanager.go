@@ -155,19 +155,29 @@ func (wm *WorldManager) processInputQueue() {
 
 			//Throttle to max N commands per second per char
 			if inputCounts[input.CharacterId] >= wm.maxInputQueue {
+				slog.Debug("Throwing away command", "cmd", input.Input, "character", input.CharacterId)
 				continue //We just pitch the extras for now. Probably need to send something later
 			}
 
 			inputCounts[input.CharacterId]++
 
 			//queue the command to be processed on next tick
+			slog.Info("Length of input", "len", len(input.Input))
+			var cmd string = ""
+			if len(input.Input) > 0 {
+				cmd = strings.Fields(input.Input)[0]
+			}
+			var args []string = []string{}
+			if len(strings.Fields(input.Input)) > 1 {
+				args = strings.Fields(input.Input)[1:]
+			}
 			wm.tickManager.QueueDelayedAction(
 				ActionPlayerCommand,
 				0, //Execute immediately on next tick
 				strconv.FormatUint(input.CharacterId, 10),
 				&PlayerCommandData{
-					Command: strings.Fields(input.Input)[0],
-					Args:    strings.Fields(input.Input)[1:],
+					Command: cmd,
+					Args:    args,
 				},
 				PlayerCommandCallback,
 			)
@@ -295,10 +305,9 @@ func (wm *WorldManager) getSpawnLocation(character *character.Character) (string
 
 // RemoveCharacter removes a character from the world
 func (wm *WorldManager) RemoveCharacter(characterId uint64) {
-	wm.mu.Lock()
-	defer wm.mu.Unlock()
-
+	wm.mu.RLock()
 	character, exists := wm.characters[characterId]
+	wm.mu.RUnlock()
 	if !exists {
 		return
 	}
@@ -311,8 +320,10 @@ func (wm *WorldManager) RemoveCharacter(characterId uint64) {
 	//wm.userManager.SaveUser(character)
 
 	// Remove from room and world
+	wm.mu.Lock()
 	wm.removeFromRoom(character, areaID, roomID)
 	delete(wm.characters, characterId)
+	wm.mu.Unlock()
 
 	// Close connection and clean up
 	if conn, exists := wm.connections[characterId]; exists {

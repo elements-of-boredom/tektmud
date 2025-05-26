@@ -134,15 +134,15 @@ func (tm *TickManager) ProcessTick(wm *WorldManager) {
 
 	//Process everything read
 	for tm.queue.Len() > 0 {
-		tm.mu.Lock()
+
 		next := tm.queue[0]
 		if next.ExecuteAt.After(now) {
 			break //
 		}
-
+		tm.mu.Lock()
 		action := heap.Pop(&tm.queue).(*Action) //Pop off queue and return type to Action
-		slog.Debug("Popped item off queue", "id", action.Id)
 		tm.mu.Unlock()
+		slog.Debug("Popped item off queue", "id", action.Id)
 		if action.Callback != nil {
 			if err := action.Callback(action, wm); err != nil {
 				slog.Error("Error executing action", "action", action.Id, "err", err)

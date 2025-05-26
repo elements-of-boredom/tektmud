@@ -13,7 +13,7 @@ type Character struct {
 	Balance *Balance `yaml:"balance"`
 
 	Handlers []string
-	//AdminCtx *AdminContext
+	AdminCtx *AdminContext
 
 	// Persistence facade - these would be saved/loaded
 	SavedHandlers []string `yaml:"saved_handlers,omitempty"`
@@ -27,13 +27,13 @@ func NewCharacter(id uint64, name string) *Character {
 		Name:     name,
 		Balance:  NewBalance(),
 		Handlers: make([]string, 0),
-		//AdminCtx: nil, // No admin rights by default
+		AdminCtx: nil, // No admin rights by default
 	}
 
 	// Set default balance cooldowns
 	char.Balance.SetCooldown(AttackBalance, 2*time.Second)
-	char.Balance.SetCooldown(HealingBalance, 1*time.Second)
-	char.Balance.SetCooldown(MovementBalance, 500*time.Millisecond)
+	char.Balance.SetCooldown(HealingBalance, 4*time.Second)
+	char.Balance.SetCooldown(MovementBalance, 200*time.Millisecond)
 
 	return char
 }
@@ -55,4 +55,7 @@ func (c *Character) SetLocation(areaId, roomId string) {
 
 func (c *Character) GetLocation() (areaId string, roomId string) {
 	return c.AreaId, c.RoomId
+}
+func (c *Character) GetAdminContext() *AdminContext {
+	return c.AdminCtx
 }

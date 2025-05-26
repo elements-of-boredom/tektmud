@@ -276,17 +276,33 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 			//This returns false until they can get through login
 			//either with existing account, or new.
-			if userId, success := s.processLoginInput(pc, input, loginData); success {
+			if user, success := s.processLoginInput(pc, input, loginData); success {
 				//If we make it to here, we are through login (or user creation)
 				//Add the player to the world manager
 				//pass into our "game loop" that handles commands from the player
 				//Add our user to the world
-				char := character.NewCharacter(userId, pc.Username)
+				char := character.NewCharacter(user.Id, pc.Username)
+				var roles []character.AdminRole = []character.AdminRole{}
+
+				//Map our user roles => character roles
+				if user.IsAdmin() {
+					roles = append(roles, character.AdminRoleAdmin)
+				}
+				if user.IsBuilder() {
+					roles = append(roles, character.AdminRoleBuilder)
+				}
+				if user.IsOwner() {
+					roles = append(roles, character.AdminRoleOwner)
+				}
+				if len(roles) > 0 {
+					char.AdminCtx = character.NewAdminContext(roles...)
+				}
 				s.worldManager.AddCharacter(char, pc)
+
 				loginData = nil
 				slog.Info("Player logged in.", "player", pc.Username, "connection-id", pc.Id)
 
-				s.handlePlayerSession(userId, pc)
+				s.handlePlayerSession(user.Id, pc)
 				return //If we ever leave handlePlayerSession our defer will cleanup.
 			}
 
@@ -298,13 +314,13 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 }
 
-func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]any) (uint64, bool) {
+func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]any) (*users.UserRecord, bool) {
 	switch pc.GetState() {
 	case connections.StateUsername:
 		if input == "" {
 			//Just resend them the username question
 			s.sendToPlayer(pc, "What is your name?")
-			return 0, false
+			return nil, false
 		}
 		pc.Username = input
 
@@ -320,20 +336,20 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			s.sendToPlayer(pc, "Enter your password.")
 			pc.SetState(connections.StatePassword)
 		}
-		return 0, false //We haven't completed login
+		return nil, false //We haven't completed login
 
 	case connections.StatePassword:
 		userId, exists := stateData["userid"]
 		if !exists {
 			//Should never get here but...
 			s.sendToPlayer(pc, "What is your name?")
-			return 0, false
+			return nil, false
 		}
 		userId64, ok := userId.(uint64)
 		if !ok {
 			slog.Error("Some how we cannot parse our userId")
 			s.sendToPlayer(pc, "What is your name?")
-			return 0, false
+			return nil, false
 		}
 		//Finally, validate their password against their existing password.
 		if s.userManager.ValidatePassword(input, userId64) {
@@ -345,7 +361,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				slog.Error("Unable to find the user after validation. Sems impossible", "error", err)
 			}
 
-			return ur.Id, true //login complete
+			return ur, true //login complete
 		} else {
 			tries, ok := stateData["attempts"]
 			if !ok {
@@ -359,32 +375,32 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				pc.SetState(connections.StateRejectedAuthentication)
 			}
 		}
-		return 0, false //Something didn't work right
+		return nil, false //Something didn't work right
 
 	case connections.StateNewPassword:
 		//Validate the user's password. For now we are gonna auto-pass TODO
 		valid := s.userManager.PasswordMeetsMinimums(input, pc.Username)
 		if !valid {
 			s.sendToPlayer(pc, "Passwords must be at least 6 characters, and cannot be your username.\r\nChoose a password:")
-			return 0, false
+			return nil, false
 		}
 		//password was good, throw it in cache, and confirm it.
 		stateData["password"] = input
 		s.sendToPlayer(pc, fmt.Sprintf("Please confirm your password, %s", pc.Username))
 		pc.SetState(connections.StateConfirmPassword)
-		return 0, false
+		return nil, false
 
 	case connections.StateConfirmPassword:
 		if input == stateData["password"] {
 			s.sendToPlayer(pc, "Would you like to associate an email address? Without one, you will be unable to recover your account if you forget your password. If so, enter one now, or simply press enter to continue. \r\n(You may also set one later in game.)")
 			pc.SetState(connections.StateCollectEmail)
-			return 0, false
+			return nil, false
 		}
 
 		s.sendToPlayer(pc, "Those passwords did not match. Please try again.")
 		s.sendToPlayer(pc, "Welcome new player! Choose a password.")
 		pc.SetState(connections.StateNewPassword)
-		return 0, false
+		return nil, false
 
 	case connections.StateCollectEmail:
 		passString := stateData["password"].(string)
@@ -397,11 +413,11 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		slog.Info("Created user", "username", ur.Username)
 		//set authenticated
 		pc.SetState(connections.StateAuthenticated)
-		return ur.Id, true
+		return ur, true
 	}
 
 	//our catchall
-	return 0, false
+	return nil, false
 }
 
 // This is our ultimate game loop for input mgmt.
