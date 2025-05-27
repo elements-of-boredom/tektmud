@@ -86,7 +86,7 @@ func (ct *ColorTemplate) processColors(text string, useTrueColor bool) string {
 			if ansi, exists := colorMap[code]; exists {
 				return ansi
 			}
-			return match
+			//Fall through to allow for checks for things like $3 or $12
 		}
 
 		// Single letter BG colors
@@ -95,7 +95,7 @@ func (ct *ColorTemplate) processColors(text string, useTrueColor bool) string {
 				return fmt.Sprintf("\033[48;5;%s", ansi[4:])
 
 			}
-			return match
+			//Fall through to allow for checks for things like $3 or $12
 		}
 		// Hex colors
 		if strings.HasPrefix(code, "X") && len(code) == 7 {
@@ -193,7 +193,17 @@ func (tm *TemplateManager) Process(templateName string, maybeData ...any) (strin
 		data = maybeData[0]
 	}
 
-	reload := strings.HasPrefix(templateName, "login")
+	prefixes := []string{
+		"login",
+		"rooms", //Only during dev?
+	}
+	var reload bool = false
+	for _, v := range prefixes {
+		if !reload {
+			reload = strings.HasPrefix(templateName, v)
+		}
+	}
+
 	if err := tm.LoadTemplate(templateName, reload); err != nil {
 		return "[Error loading template]", err
 	}

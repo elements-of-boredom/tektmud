@@ -427,9 +427,9 @@ func LogPlayerAction(playerID uint64, playerName, action string, args ...any) {
 	}
 }
 
-func LogAdminAction(adminID, adminName, action string, target string, args ...any) {
+func LogAdminAction(adminId uint64, adminName, action string, target string, args ...any) {
 	if globalLogger != nil {
-		globalLogger.LogAdminAction(adminID, adminName, action, target, args...)
+		globalLogger.LogAdminAction(adminId, adminName, action, target, args...)
 	}
 }
 

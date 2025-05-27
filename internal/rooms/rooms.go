@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	configs "tektmud/internal/config"
+	"tektmud/internal/logger"
+	"tektmud/internal/templates"
 )
 
 // Direction represents movement directions
@@ -353,13 +355,16 @@ func (am *AreaManager) GetRoomCount() int {
 
 // FormatRoom returns a formatted description of a room for display
 // TODO: Shift to using a template so we can colorize simply.
-func (am *AreaManager) FormatRoom(areaID, roomID string) string {
+func (am *AreaManager) FormatRoom(areaID, roomID string, tplm *templates.TemplateManager) string {
 	room, exists := am.GetRoom(areaID, roomID)
-	if !exists {
+	area, aExists := am.GetArea(areaID)
+	if !exists || !aExists {
 		return "You are in an empty void."
 	}
-
-	output := fmt.Sprintf("%s\n%s\n", room.Title, room.Description)
+	data := make(map[string]string)
+	data["Title"] = room.Title
+	data["AreaName"] = area.Name
+	data["Description"] = room.Description
 
 	// Add exits
 	var visibleExits []string
@@ -368,12 +373,26 @@ func (am *AreaManager) FormatRoom(areaID, roomID string) string {
 			visibleExits = append(visibleExits, string(exit.Direction))
 		}
 	}
-
+	var exits string = ""
 	if len(visibleExits) > 0 {
-		output += fmt.Sprintf("\nExits: %s", strings.Join(visibleExits, ", "))
+		var exitText string
+		if len(visibleExits) == 1 {
+			exitText = visibleExits[0]
+		} else if len(visibleExits) == 2 {
+			exitText = strings.Join(visibleExits, ", and ")
+		} else {
+			exitText = strings.Join(visibleExits[:len(visibleExits)-1], ", ") + ", and " + visibleExits[len(visibleExits)-1]
+		}
+		exits += fmt.Sprintf("You see exits to the %s", exitText)
 	} else {
-		output += "\nThere are no obvious exits."
+		exits += "There are no obvious exits."
 	}
 
+	data["Exits"] = exits
+
+	output, err := tplm.Process("rooms/default", data)
+	if err != nil {
+		logger.Error("Unable to process template", "t", "rooms/default", "error", err)
+	}
 	return output
 }

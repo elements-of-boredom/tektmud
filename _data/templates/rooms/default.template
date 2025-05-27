@@ -1,0 +1,4 @@
+
+$2{{ .Title }}$n ( $8{{ .AreaName}} $n)
+{{ .Description}}
+$y{{ .Exits}}$n

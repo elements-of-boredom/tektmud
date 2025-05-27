@@ -11,6 +11,7 @@ import (
 	"tektmud/internal/connections"
 	"tektmud/internal/logger"
 	"tektmud/internal/rooms"
+	"tektmud/internal/templates"
 	"tektmud/internal/users"
 	"time"
 )
@@ -33,6 +34,7 @@ type WorldManager struct {
 	areaManager   *rooms.AreaManager
 	tickManager   TickManager
 	userManager   *users.UserManager
+	tmpl          *templates.TemplateManager
 	characters    map[uint64]*character.Character            //CharacterId => Character
 	connections   map[uint64]*connections.PlayerConnection   //CharacterId => PlayerConnection
 	roomOccupants map[string]map[uint64]*character.Character //areaId:roomId => characters
@@ -50,7 +52,7 @@ type WorldManager struct {
 	mu sync.RWMutex
 }
 
-func NewWorldManager(um *users.UserManager) *WorldManager {
+func NewWorldManager(um *users.UserManager, tm *templates.TemplateManager) *WorldManager {
 	c := configs.GetConfig()
 
 	wc := &WorldConfig{
@@ -64,6 +66,7 @@ func NewWorldManager(um *users.UserManager) *WorldManager {
 		areaManager:   rooms.NewAreaManager(),
 		tickManager:   *NewTickManager(),
 		userManager:   um,
+		tmpl:          tm,
 		characters:    make(map[uint64]*character.Character),
 		connections:   make(map[uint64]*connections.PlayerConnection),
 		roomOccupants: make(map[string]map[uint64]*character.Character),
@@ -379,7 +382,7 @@ func (wm *WorldManager) MoveCharacter(character *character.Character, direction 
 // ShowRoom displays a room description to a character
 func (wm *WorldManager) ShowRoom(character *character.Character) {
 	areaId, roomId := character.GetLocation()
-	roomDesc := wm.areaManager.FormatRoom(areaId, roomId)
+	roomDesc := wm.areaManager.FormatRoom(areaId, roomId, wm.tmpl)
 
 	// Add other characters in the room
 	wm.mu.RLock()

@@ -59,7 +59,7 @@ func NewMudServer() (*MudServer, error) {
 	tm := templates.NewTemplateManager()
 
 	//bootup our world manager
-	wm := world.NewWorldManager(userManager)
+	wm := world.NewWorldManager(userManager, tm)
 	if err := wm.Initialize(); err != nil {
 		//We need to bail if this errored.
 		cancel()
