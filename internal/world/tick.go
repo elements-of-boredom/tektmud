@@ -215,8 +215,7 @@ func PlayerCommandCallback(action *Action, wm *WorldManager) error {
 		logger.Error("Error converting an action character id for a player to uin64", "id", action.CharacterId, "err", err)
 		id = 0
 	}
-
-	return wm.HandleInputDirect(id, fullCommand)
+	return wm.HandleInputImmediate(id, fullCommand)
 }
 
 // HeartbeatCallback handles periodic world updates

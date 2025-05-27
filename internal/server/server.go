@@ -296,7 +296,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 				s.worldManager.AddCharacter(char, pc)
 
 				loginData = nil
-				logger.Info("Player logged in.", "player", pc.Username, "connection-id", pc.Id)
+				logger.GetLogger().LogPlayerConnect(user.Id, user.Username, pc.Conn.RemoteAddr().String())
 
 				s.handlePlayerSession(user.Id, pc)
 				return //If we ever leave handlePlayerSession our defer will cleanup.

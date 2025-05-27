@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"tektmud/internal/character"
+	"tektmud/internal/logger"
 	"tektmud/internal/rooms"
 	"time"
 )
@@ -94,6 +95,7 @@ func (h *BuilderHandler) handleAreaCreate(ctx *InputContext, adminCtx *character
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Area '%s' created and saved successfully.", areaId))
 	}
+	logger.GetLogger().LogAreaCreation(ctx.Character.Id, ctx.Character.Name, areaId, areaName)
 
 	return HandlerStop, nil
 }
@@ -218,11 +220,12 @@ func (h *BuilderHandler) editAreaName(ctx *InputContext, area *rooms.Area, newNa
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Area name changed from '%s' to '%s' and saved.", oldName, newName))
 	}
-
+	logger.GetLogger().LogAdminAction(ctx.Character.Id, ctx.Character.Name, "edit_area_name", area.Id, "previous_name", oldName)
 	return HandlerStop, nil
 }
 
 func (h *BuilderHandler) editAreaDescription(ctx *InputContext, area *rooms.Area, newDesc string) (HandlerResult, error) {
+	oldDesc := area.Description
 	area.Description = newDesc
 	area.Properties["last_edited_by"] = ctx.Character.Name
 	area.Properties["last_edited_at"] = time.Now().Format(time.RFC3339)
@@ -233,7 +236,7 @@ func (h *BuilderHandler) editAreaDescription(ctx *InputContext, area *rooms.Area
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, "Area description updated and saved.")
 	}
-
+	logger.GetLogger().LogAdminAction(ctx.Character.Id, ctx.Character.Name, "edit_area_description", area.Id, "previous_desc", oldDesc)
 	return HandlerStop, nil
 }
 
@@ -259,7 +262,7 @@ func (h *BuilderHandler) editAreaProperty(ctx *InputContext, area *rooms.Area, a
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Area property '%s' set to '%s' and saved.", key, value))
 	}
-
+	logger.GetLogger().LogAdminAction(ctx.Character.Id, ctx.Character.Name, "edit_area_property", key, "area", area.Id)
 	return HandlerStop, nil
 }
 
@@ -344,7 +347,7 @@ func (h *BuilderHandler) handleRoomCreate(ctx *InputContext, adminCtx *character
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Room '%s' created and saved successfully.", roomId))
 	}
-
+	logger.GetLogger().LogRoomCreation(ctx.Character.Id, ctx.Character.Name, areaId, roomId, roomTitle)
 	return HandlerStop, nil
 }
 
@@ -493,6 +496,8 @@ func (h *BuilderHandler) editRoomTitle(ctx *InputContext, room *rooms.Room, newT
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Room title changed from '%s' to '%s' and saved.", oldTitle, newTitle))
 	}
 
+	logger.GetLogger().LogRoomEdit(ctx.Character.Id, ctx.Character.Name, room.AreaId, room.Id, "title", oldTitle, newTitle)
+
 	// If this is the current room, show the updated room to the character
 	currentAreaID, currentRoomID := ctx.Character.GetLocation()
 	if room.AreaId == currentAreaID && room.Id == currentRoomID {
@@ -503,6 +508,7 @@ func (h *BuilderHandler) editRoomTitle(ctx *InputContext, room *rooms.Room, newT
 }
 
 func (h *BuilderHandler) editRoomDescription(ctx *InputContext, room *rooms.Room, newDesc string) (HandlerResult, error) {
+	oldDesc := room.Description
 	room.Description = newDesc
 	room.Properties["last_edited_by"] = ctx.Character.Name
 	room.Properties["last_edited_at"] = time.Now().Format(time.RFC3339)
@@ -513,6 +519,8 @@ func (h *BuilderHandler) editRoomDescription(ctx *InputContext, room *rooms.Room
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, "Room description updated and saved.")
 	}
+
+	logger.GetLogger().LogRoomEdit(ctx.Character.Id, ctx.Character.Name, room.AreaId, room.Id, "description", oldDesc, newDesc)
 
 	// If this is the current room, show the updated room to the character
 	currentAreaId, currentRoomId := ctx.Character.GetLocation()
@@ -545,7 +553,7 @@ func (h *BuilderHandler) editRoomProperty(ctx *InputContext, room *rooms.Room, a
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Room property '%s' set to '%s' and saved.", key, value))
 	}
-
+	logger.GetLogger().LogRoomEdit(ctx.Character.Id, ctx.Character.Name, room.AreaId, room.Id, key, "???", value)
 	return HandlerStop, nil
 }
 
@@ -646,6 +654,8 @@ func (h *BuilderHandler) addRoomExit(ctx *InputContext, room *rooms.Room, args [
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Exit %s -> %s added%s%s and saved.", direction, destination, hiddenStr, keywordStr))
 	}
 
+	logger.GetLogger().LogRoomEdit(ctx.Character.Id, ctx.Character.Name, room.AreaId, room.Id, "exits", "", string(direction))
+
 	return HandlerStop, nil
 }
 
@@ -698,6 +708,8 @@ func (h *BuilderHandler) removeRoomExit(ctx *InputContext, room *rooms.Room, arg
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Exit %s removed and saved.", direction))
 	}
+
+	logger.GetLogger().LogRoomEdit(ctx.Character.Id, ctx.Character.Name, room.AreaId, room.Id, "remove_exit", "", string(direction))
 
 	return HandlerStop, nil
 }
@@ -793,6 +805,8 @@ func (h *BuilderHandler) handleDig(ctx *InputContext, adminCtx *character.AdminC
 	} else {
 		ctx.World.SendToCharacter(ctx.Character, fmt.Sprintf("Room '%s' dug %s and saved successfully.", newRoomID, direction))
 	}
+
+	logger.GetLogger().LogRoomEdit(ctx.Character.Id, ctx.Character.Name, currentAreaId, currentRoomId, "dig", string(direction), newRoomID)
 
 	return HandlerStop, nil
 }

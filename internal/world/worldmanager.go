@@ -162,7 +162,7 @@ func (wm *WorldManager) processInputQueue() {
 			inputCounts[input.CharacterId]++
 
 			//queue the command to be processed on next tick
-			logger.Info("Length of input", "len", len(input.Input))
+			logger.Debug("Length of input", "len", len(input.Input))
 			var cmd string = ""
 			if len(input.Input) > 0 {
 				cmd = strings.Fields(input.Input)[0]
@@ -245,7 +245,8 @@ func (wm *WorldManager) HandleInput(characterId uint64, input string) error {
 }
 
 // HandleInputDirect processes input immediately (for admin commands or special cases)
-func (wm *WorldManager) HandleInputDirect(characterId uint64, input string) error {
+// Or is called from the tick process after being dequeued
+func (wm *WorldManager) HandleInputImmediate(characterId uint64, input string) error {
 	wm.mu.RLock()
 	character, exists := wm.characters[characterId]
 	wm.mu.RUnlock()

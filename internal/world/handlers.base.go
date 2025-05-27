@@ -3,6 +3,7 @@ package world
 import (
 	"strings"
 	"tektmud/internal/character"
+	"tektmud/internal/logger"
 	"tektmud/internal/rooms"
 )
 
@@ -100,6 +101,8 @@ func (h *SayHandler) Handle(ctx *InputContext) (HandlerResult, error) {
 		ctx.World.SendToCharacter(ctx.Character, "Say what?")
 		return HandlerStop, nil
 	}
+
+	logger.LogPlayerAction(ctx.Character.Id, ctx.Character.Name, ctx.RawInput)
 
 	//TODO: Template
 	message := strings.Join(ctx.Args, " ")

@@ -44,6 +44,10 @@ func NewLogger() (*Logger, error) {
 		return nil, err
 	}
 
+	if err := logger.setupComponentLoggers(); err != nil {
+		return nil, err
+	}
+
 	return logger, nil
 }
 
@@ -206,7 +210,7 @@ func (l *Logger) Error(msg string, args ...any) {
 }
 
 // Game-specific logging methods
-func (l *Logger) LogPlayerAction(playerID, playerName, action string, args ...any) {
+func (l *Logger) LogPlayerAction(playerID uint64, playerName, action string, args ...any) {
 	if l.gameLogger != nil {
 		allArgs := append([]any{
 			"player_id", playerID,
@@ -218,7 +222,7 @@ func (l *Logger) LogPlayerAction(playerID, playerName, action string, args ...an
 	}
 }
 
-func (l *Logger) LogPlayerConnect(playerID, playerName, ip string) {
+func (l *Logger) LogPlayerConnect(playerID uint64, playerName, ip string) {
 	if l.gameLogger != nil {
 		l.gameLogger.Info("Player connected",
 			"player_id", playerID,
@@ -241,7 +245,7 @@ func (l *Logger) LogPlayerDisconnect(playerID, playerName string, reason string)
 }
 
 // Admin-specific logging methods
-func (l *Logger) LogAdminAction(adminID, adminName, action string, target string, args ...any) {
+func (l *Logger) LogAdminAction(adminID uint64, adminName, action string, target string, args ...any) {
 	if l.adminLogger != nil {
 		allArgs := append([]any{
 			"admin_id", adminID,
@@ -254,20 +258,20 @@ func (l *Logger) LogAdminAction(adminID, adminName, action string, target string
 	}
 }
 
-func (l *Logger) LogRoomCreation(adminID, adminName, areaID, roomID, roomTitle string) {
+func (l *Logger) LogRoomCreation(adminID uint64, adminName, areaID, roomID, roomTitle string) {
 	l.LogAdminAction(adminID, adminName, "create_room", roomID,
 		"area_id", areaID,
 		"room_title", roomTitle,
 	)
 }
 
-func (l *Logger) LogAreaCreation(adminID, adminName, areaID, areaName string) {
+func (l *Logger) LogAreaCreation(adminID uint64, adminName, areaID, areaName string) {
 	l.LogAdminAction(adminID, adminName, "create_area", areaID,
 		"area_name", areaName,
 	)
 }
 
-func (l *Logger) LogRoomEdit(adminID, adminName, areaID, roomID, field, oldValue, newValue string) {
+func (l *Logger) LogRoomEdit(adminID uint64, adminName, areaID, roomID, field, oldValue, newValue string) {
 	l.LogAdminAction(adminID, adminName, "edit_room", roomID,
 		"area_id", areaID,
 		"field", field,
@@ -417,7 +421,7 @@ func Println(v ...interface{}) {
 }
 
 // Specialized logging functions
-func LogPlayerAction(playerID, playerName, action string, args ...any) {
+func LogPlayerAction(playerID uint64, playerName, action string, args ...any) {
 	if globalLogger != nil {
 		globalLogger.LogPlayerAction(playerID, playerName, action, args...)
 	}
