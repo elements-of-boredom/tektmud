@@ -14,9 +14,10 @@ var (
 )
 
 type Config struct {
-	Server Server `yaml:"server"`
-	Paths  Paths  `yaml:"paths"`
-	Core   Core   `yaml:"core"`
+	Server  Server `yaml:"server"`
+	Paths   Paths  `yaml:"paths"`
+	Core    Core   `yaml:"core"`
+	Logging Logs   `yaml:"logging"`
 }
 
 func GetConfig() Config {

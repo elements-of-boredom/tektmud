@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"context"
 	"fmt"
-	"log/slog"
 	"net"
 	"path/filepath"
 	"strings"
@@ -13,6 +12,7 @@ import (
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
 	"tektmud/internal/language"
+	"tektmud/internal/logger"
 	"tektmud/internal/templates"
 	"tektmud/internal/users"
 	"tektmud/internal/world"
@@ -32,13 +32,9 @@ type MudServer struct {
 	wg                sync.WaitGroup
 }
 
-func NewMudServer(configPath string) (*MudServer, error) {
+func NewMudServer() (*MudServer, error) {
 
-	config, err := configs.LoadConfig(configPath)
-	if err != nil {
-		return nil, fmt.Errorf("failed to find config at %s,  %w", configPath, err)
-	}
-
+	config := configs.GetConfig()
 	//create context to manage graceful shutdown
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -50,7 +46,7 @@ func NewMudServer(configPath string) (*MudServer, error) {
 		return nil, fmt.Errorf("failed to create a usermanager: %w", err)
 	}
 
-	connMgr, err := connections.NewConnectionManager(config)
+	connMgr, err := connections.NewConnectionManager(&config)
 	if err != nil {
 		//No real value in calling cancel
 		//but the compiler doesn't like we don't use it in this path
@@ -72,7 +68,7 @@ func NewMudServer(configPath string) (*MudServer, error) {
 
 	//Initalize server components
 	server := &MudServer{
-		config:            config,
+		config:            &config,
 		connectionManager: connMgr,
 		userManager:       userManager,
 		templateManager:   tm,
@@ -85,7 +81,7 @@ func NewMudServer(configPath string) (*MudServer, error) {
 }
 
 func (s *MudServer) Initialize() error {
-	slog.Info("Initializing ...")
+	logger.Info("Initializing ...")
 
 	//Create any of our data directories that may be empty.
 	//load any required things
@@ -95,7 +91,7 @@ func (s *MudServer) Initialize() error {
 
 // Starts the MUD server with new listners
 func (s *MudServer) Start() error {
-	slog.Info("Starting %s on ports %v", s.config.Server.Name, s.config.Server.Ports)
+	logger.Info(fmt.Sprintf("Starting %s on ports %v", s.config.Server.Name, s.config.Server.Ports))
 
 	//Start our listeners on all configured ports
 	for _, port := range s.config.Server.Ports {
@@ -108,12 +104,12 @@ func (s *MudServer) Start() error {
 
 	//Start background tasks
 
-	slog.Info("Server started successfully", "port(s)", len(s.listeners))
+	logger.Info("Server started successfully", "port(s)", len(s.listeners))
 	return nil
 }
 
 func (s *MudServer) Shutdown() error {
-	slog.Warn("Shutting down server...")
+	logger.Warn("Shutting down server...")
 
 	//Cancel the context to signal a shutdown
 	s.cancel()
@@ -137,9 +133,9 @@ func (s *MudServer) Shutdown() error {
 	//Wait for graceful shutdown, or timeout and die
 	select {
 	case <-done:
-		slog.Warn("Server shutdown complete")
+		logger.Warn("Server shutdown complete")
 	case <-time.After(10 * time.Second):
-		slog.Warn("Shutdown timeout reached, forcing exit")
+		logger.Warn("Shutdown timeout reached, forcing exit")
 	}
 
 	return nil
@@ -165,7 +161,7 @@ func (s *MudServer) startListener(port int) error {
 	s.wg.Add(1)
 	go s.acceptConnections(listener, port)
 
-	slog.Info("Listener started", "port", port)
+	logger.Info("Listener started", "port", port)
 	return nil
 }
 
@@ -187,7 +183,7 @@ func (s *MudServer) acceptConnections(listener net.Listener, port int) {
 				case <-s.ctx.Done():
 					return
 				default:
-					slog.Warn("Error accepting connection.", "port", port, "error", err)
+					logger.Warn("Error accepting connection.", "port", port, "error", err)
 				}
 			}
 
@@ -221,7 +217,7 @@ func (s *MudServer) handleNewConnection(conn net.Conn, port int) {
 
 	s.connectionManager.Add(playerConn)
 
-	slog.Info("New connection added",
+	logger.Info("New connection added",
 		"from", conn.RemoteAddr().String(),
 		"port", port)
 
@@ -235,13 +231,13 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 	//Feels weird, but if we leave this method, we are leaving it all
 	defer func(id connections.ConnectionId) {
 		s.connectionManager.Remove(id)
-		slog.Info("Closed connection", "connId", pc.Id)
+		logger.Info("Closed connection", "connId", pc.Id)
 	}(pc.Id)
 
 	//Send the initial welcome message/Splash text
 	output, err := s.templateManager.Process("login/welcome-splash")
 	if err != nil {
-		slog.Error("Prompt template error", "template", "login/welcome-splash", "error", err)
+		logger.Error("Prompt template error", "template", "login/welcome-splash", "error", err)
 		output = fmt.Sprintf("Error generating propt template '%s'", "splash")
 	}
 	s.sendToPlayer(pc, output)
@@ -267,7 +263,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 				if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 					s.sendToPlayer(pc, "Connection timed out due to inactivity.")
 				}
-				slog.Warn("Connection timeout due to inactivity at login", "connId", pc.Id)
+				logger.Warn("Connection timeout due to inactivity at login", "connId", pc.Id)
 				return
 			}
 
@@ -300,7 +296,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 				s.worldManager.AddCharacter(char, pc)
 
 				loginData = nil
-				slog.Info("Player logged in.", "player", pc.Username, "connection-id", pc.Id)
+				logger.Info("Player logged in.", "player", pc.Username, "connection-id", pc.Id)
 
 				s.handlePlayerSession(user.Id, pc)
 				return //If we ever leave handlePlayerSession our defer will cleanup.
@@ -347,7 +343,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		}
 		userId64, ok := userId.(uint64)
 		if !ok {
-			slog.Error("Some how we cannot parse our userId")
+			logger.Error("Some how we cannot parse our userId")
 			s.sendToPlayer(pc, "What is your name?")
 			return nil, false
 		}
@@ -358,7 +354,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 
 			ur, err := s.userManager.GetUserById(userId64)
 			if err != nil {
-				slog.Error("Unable to find the user after validation. Sems impossible", "error", err)
+				logger.Error("Unable to find the user after validation. Sems impossible", "error", err)
 			}
 
 			return ur, true //login complete
@@ -410,7 +406,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			s.sendToPlayer(pc, "Error creating player, please try again.")
 			pc.SetState(connections.StateRejectedAuthentication)
 		}
-		slog.Info("Created user", "username", ur.Username)
+		logger.Info("Created user", "username", ur.Username)
 		//set authenticated
 		pc.SetState(connections.StateAuthenticated)
 		return ur, true
@@ -433,7 +429,7 @@ func (s *MudServer) handlePlayerSession(playerId uint64, pc *connections.PlayerC
 		default:
 			line, err := pc.Reader.ReadString('\n')
 			if err != nil {
-				slog.Error("Unknown error reading connection", "user", pc.Username, "error", err)
+				logger.Error("Unknown error reading connection", "user", pc.Username, "error", err)
 				return
 			}
 

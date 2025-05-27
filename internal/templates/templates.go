@@ -3,13 +3,13 @@ package templates
 import (
 	"bytes"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
 	configs "tektmud/internal/config"
+	"tektmud/internal/logger"
 	"text/template"
 )
 
@@ -224,7 +224,7 @@ func (tm *TemplateManager) LoadTemplate(name string, reload ...bool) error {
 		fileContents, err := os.ReadFile(fullPath)
 
 		if err != nil {
-			slog.Warn("Unable to load template file", "path", fullPath)
+			logger.Warn("Unable to load template file", "path", fullPath)
 			return err
 		}
 		tmpl = NewColorTemplate(name)

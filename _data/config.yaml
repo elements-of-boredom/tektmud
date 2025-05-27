@@ -17,3 +17,18 @@ core:
   tick_rate : 100
   default_area: "newbie"
   default_room: "start"
+logging:
+  log_dir: "logs"
+  log_file: "mud.log"
+  max_size: 80
+  max_backups: 5
+  max_age: 30
+  compress: true
+  #Behavior
+  level: 1
+  enable_console: true
+  enable_structured: true
+  enable_game_logs: true
+  enable_admin_logs: true
+  enable_system_logs: true
+  enable_error_logs: true

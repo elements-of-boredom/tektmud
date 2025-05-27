@@ -3,13 +3,13 @@ package users
 import (
 	"encoding/binary"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"sync"
 	configs "tektmud/internal/config"
+	"tektmud/internal/logger"
 
 	"gopkg.in/yaml.v3"
 )
@@ -202,7 +202,7 @@ func (idx *UserIndex) scanForUserFiles() map[string]uint64 {
 
 	dirInfos, err := os.ReadDir(dir)
 	if err != nil {
-		slog.Error("unable to read files in index directory.", "err", err)
+		logger.Error("unable to read files in index directory.", "err", err)
 		return make(map[string]uint64)
 	}
 
@@ -212,11 +212,11 @@ func (idx *UserIndex) scanForUserFiles() map[string]uint64 {
 		if !fileInfo.IsDir() && strings.HasSuffix(fileInfo.Name(), ".yaml") {
 			data, err := os.ReadFile(filepath.Join(dir, fileInfo.Name()))
 			if err != nil {
-				slog.Error("unable to open file:", "filename", fileInfo.Name())
+				logger.Error("unable to open file:", "filename", fileInfo.Name())
 			}
 			var userRecord UserRecord
 			if err := yaml.Unmarshal(data, &userRecord); err != nil {
-				slog.Error("unable to deserialize file:", "filename", fileInfo.Name())
+				logger.Error("unable to deserialize file:", "filename", fileInfo.Name())
 			}
 			userData[userRecord.Username] = userRecord.Id
 		}

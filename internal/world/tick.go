@@ -3,11 +3,11 @@ package world
 import (
 	"container/heap"
 	"fmt"
-	"log/slog"
 	"math/rand"
 	"strconv"
 	"strings"
 	"sync"
+	"tektmud/internal/logger"
 	"time"
 )
 
@@ -109,7 +109,7 @@ func (tm *TickManager) QueueAction(action *Action) {
 		tm.nextActionId++
 		action.Id = fmt.Sprintf("action_%d", tm.nextActionId)
 	}
-	slog.Debug("Pushing action onto queue", "id", action.Id)
+	logger.Debug("Pushing action onto queue", "id", action.Id)
 	heap.Push(&tm.queue, action)
 }
 
@@ -142,10 +142,10 @@ func (tm *TickManager) ProcessTick(wm *WorldManager) {
 		tm.mu.Lock()
 		action := heap.Pop(&tm.queue).(*Action) //Pop off queue and return type to Action
 		tm.mu.Unlock()
-		slog.Debug("Popped item off queue", "id", action.Id)
+		logger.Debug("Popped item off queue", "id", action.Id)
 		if action.Callback != nil {
 			if err := action.Callback(action, wm); err != nil {
-				slog.Error("Error executing action", "action", action.Id, "err", err)
+				logger.Error("Error executing action", "action", action.Id, "err", err)
 			}
 		}
 	}
@@ -212,7 +212,7 @@ func PlayerCommandCallback(action *Action, wm *WorldManager) error {
 	//we know our players have good ids
 	id, err := strconv.ParseUint(action.CharacterId, 10, 64)
 	if err != nil {
-		slog.Error("Error converting an action character id for a player to uin64", "id", action.CharacterId, "err", err)
+		logger.Error("Error converting an action character id for a player to uin64", "id", action.CharacterId, "err", err)
 		id = 0
 	}
 

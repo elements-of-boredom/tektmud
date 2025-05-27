@@ -3,13 +3,13 @@ package world
 import (
 	"fmt"
 	"log"
-	"log/slog"
 	"strconv"
 	"strings"
 	"sync"
 	"tektmud/internal/character"
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
+	"tektmud/internal/logger"
 	"tektmud/internal/rooms"
 	"tektmud/internal/users"
 	"time"
@@ -75,7 +75,7 @@ func NewWorldManager(um *users.UserManager) *WorldManager {
 }
 
 func (wm *WorldManager) Initialize() error {
-	slog.Info("Initializing world engine...")
+	logger.Info("Initializing world engine...")
 
 	//Load all areas
 	if err := wm.areaManager.LoadAllAreas(); err != nil {
@@ -84,7 +84,7 @@ func (wm *WorldManager) Initialize() error {
 
 	//Validate the room connections
 	if errors := wm.areaManager.ValidateRoomConnections(); len(errors) > 0 {
-		slog.Warn("Warning: Found rooms with connection errors:", "count", len(errors))
+		logger.Warn("Warning: Found rooms with connection errors:", "count", len(errors))
 		for _, err := range errors {
 			log.Printf(" - %v", err)
 		}
@@ -93,7 +93,7 @@ func (wm *WorldManager) Initialize() error {
 	//Somehow get all our registered handlers
 	wm.registerHandlers()
 
-	slog.Info("Loaded world.", "areas", len(wm.areaManager.GetAreaList()), "rooms", wm.areaManager.GetRoomCount())
+	logger.Info("Loaded world.", "areas", len(wm.areaManager.GetAreaList()), "rooms", wm.areaManager.GetRoomCount())
 
 	return nil
 }
@@ -155,14 +155,14 @@ func (wm *WorldManager) processInputQueue() {
 
 			//Throttle to max N commands per second per char
 			if inputCounts[input.CharacterId] >= wm.maxInputQueue {
-				slog.Debug("Throwing away command", "cmd", input.Input, "character", input.CharacterId)
+				logger.Debug("Throwing away command", "cmd", input.Input, "character", input.CharacterId)
 				continue //We just pitch the extras for now. Probably need to send something later
 			}
 
 			inputCounts[input.CharacterId]++
 
 			//queue the command to be processed on next tick
-			slog.Info("Length of input", "len", len(input.Input))
+			logger.Info("Length of input", "len", len(input.Input))
 			var cmd string = ""
 			if len(input.Input) > 0 {
 				cmd = strings.Fields(input.Input)[0]

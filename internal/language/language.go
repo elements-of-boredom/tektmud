@@ -2,9 +2,9 @@ package language
 
 import (
 	"errors"
-	"log/slog"
 	"path/filepath"
 	configs "tektmud/internal/config"
+	"tektmud/internal/logger"
 
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
@@ -46,7 +46,7 @@ func T(msgId string, tplData ...map[any]any) string {
 	msg, err := translation.Translate(lng, msgId, tplData...)
 	if err != nil {
 		if !IsMessageFallbackErr(err) && !IsMessageNotFoundErr(err) {
-			slog.Error("Translation", "msgId", msgId, "error", err)
+			logger.Error("Translation", "msgId", msgId, "error", err)
 		}
 	}
 	return msg

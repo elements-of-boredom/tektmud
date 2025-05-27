@@ -1,9 +1,9 @@
 package world
 
 import (
-	"log/slog"
 	"strings"
 	"tektmud/internal/character"
+	"tektmud/internal/logger"
 )
 
 // InputHandler defines the interface for command handlers
@@ -61,7 +61,7 @@ func ProcessInput(character *character.Character, rawInput string, world *WorldM
 				break
 			}
 		} else {
-			slog.Error("Unable to find handler by name", "name", handlerName)
+			logger.Error("Unable to find handler by name", "name", handlerName)
 		}
 
 	}

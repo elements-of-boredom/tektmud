@@ -5,11 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/binary"
 	"fmt"
-	"log/slog"
 	"os"
 	"path/filepath"
 	"sync"
 	configs "tektmud/internal/config"
+	"tektmud/internal/logger"
 
 	"golang.org/x/crypto/argon2"
 	"gopkg.in/yaml.v3"
@@ -209,7 +209,7 @@ func (um *UserManager) comparePassword(input string, existing string) bool {
 
 	existingHS, err := base64.StdEncoding.DecodeString(existing)
 	if err != nil {
-		slog.Error("Unable to decode existing password", "error", err)
+		logger.Error("Unable to decode existing password", "error", err)
 		return false
 	}
 
