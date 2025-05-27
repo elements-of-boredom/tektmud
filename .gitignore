@@ -2,6 +2,7 @@
 private-notes.txt
 _data/**/users/*
 _data/**/plugin-data/*
+_data/logs/*
 **/config-overrides.yaml
 **/.roundcount
 **/rooms.instances
