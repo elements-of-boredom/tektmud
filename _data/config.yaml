@@ -1,5 +1,6 @@
 server:
-  name: "TektMud"
+  name: "Dusk"
+  world_name : "Keth'volar"
   seed: "Mud"
   max_cpu_cores: 0
   ports: [4000, 4001]

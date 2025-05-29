@@ -14,6 +14,12 @@ var (
 		"pad":      pad,
 		"padLeft":  padLeft,
 		"padright": padRight,
+		"repeat": func(count int, val string) string {
+			if count < 1 {
+				return ""
+			}
+			return strings.Repeat(val, count)
+		},
 	}
 )
 

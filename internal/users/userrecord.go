@@ -1,6 +1,9 @@
 package users
 
-import "slices"
+import (
+	"slices"
+	"tektmud/internal/character"
+)
 
 var (
 	RoleUser    string = "user"
@@ -10,11 +13,12 @@ var (
 )
 
 type UserRecord struct {
-	Id       uint64   `yaml:"id"`
-	Username string   `yaml:"username"`
-	Email    string   `yaml:"email"`
-	Password string   `yaml:"password"`
-	Roles    []string `yaml:"roles"`
+	Id       uint64               `yaml:"id"`
+	Username string               `yaml:"username"`
+	Email    string               `yaml:"email"`
+	Password string               `yaml:"password"`
+	Roles    []string             `yaml:"roles"`
+	Char     *character.Character `yaml:"character"`
 }
 
 func (ur *UserRecord) IsAdmin() bool {

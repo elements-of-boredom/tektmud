@@ -22,6 +22,7 @@ type ConnectionState int
 
 const (
 	StateConnected ConnectionState = iota
+	StateInitialPrompt
 	StateUsername
 	StatePassword
 	StateNewPassword
@@ -29,6 +30,16 @@ const (
 	StateCollectEmail
 	StateAuthenticated
 	StateRejectedAuthentication
+
+	//If the connection user doens't have a character
+	//make sure we track where they are in creating it
+	//No connection should be passed to to the world
+	//if its for a user with no character.
+	StateCharacterEval
+	StateCharacterGenderChoice
+	StateCharacterRaceChoice
+	StateCharacterClassChoice
+	StateCharacterNameChoice
 )
 
 type PlayerConnection struct {

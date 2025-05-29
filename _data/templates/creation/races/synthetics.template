@@ -1,0 +1,15 @@
+Human consciousness housed in artificial bodies, combining biological thought 
+with mechanical precision. Created through advanced medical procedures that
+preserve the brain while replacing everything else, they excel in technical 
+fields and dangerous environments where their durable frames provide 
+advantages. Despite their artificial bodies, they maintain fully human 
+personalities and desires, though many believe the process strips them
+of the natural intuition humans have.
+
+Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
+{{ repeat "-" 60}}
+      {{ pad 10 "13"}}{{ pad 10 "12"}}{{ pad 10 "13"}}{{ pad 10 "11"}}{{ pad 10 "13"}}
+
+Racial Bonus: 
+  - Immune to suffocation.
+  - Resistant to POISON

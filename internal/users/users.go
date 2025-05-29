@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	configs "tektmud/internal/config"
 	"tektmud/internal/logger"
@@ -66,8 +67,10 @@ func (um *UserManager) loadBinaryIndex() error {
 
 func (um *UserManager) GetUserByUsername(username string) (*UserRecord, error) {
 	//first lets see if they are in our active cache
+	//lowercase the name to prevent casing duplicates
+	lusername := strings.ToLower(username)
 	um.mu.RLock()
-	userId, exists := um.userIndex.UsersByName[username]
+	userId, exists := um.userIndex.UsersByName[lusername]
 	um.mu.RUnlock()
 
 	if !exists {

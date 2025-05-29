@@ -354,7 +354,6 @@ func (am *AreaManager) GetRoomCount() int {
 }
 
 // FormatRoom returns a formatted description of a room for display
-// TODO: Shift to using a template so we can colorize simply.
 func (am *AreaManager) FormatRoom(areaID, roomID string, tplm *templates.TemplateManager) string {
 	room, exists := am.GetRoom(areaID, roomID)
 	area, aExists := am.GetArea(areaID)

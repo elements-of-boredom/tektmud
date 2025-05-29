@@ -1,0 +1,16 @@
+{{ repeat 10 "/" }} Step 4 of 4 in Character Creation {{ repeat 10 "\" }}
+
+Finally, it is time to choose your character's name. It should reflect
+the character you've created thus far in the process.
+
+$WHint:$n
+Choose your name carefully, considering names that fit the otherworldly, 
+science-fantasy atmosphere of this universe. Avoid referencing actual 
+people, places, brands, or pop culture from Earth. Your name becomes part of 
+the immersive experience for all players, so choose something that feels at 
+home among the stars and strange worlds of {{ .WorldName }}. 
+
+Please note that administrators reserve the right to require name changes 
+if a name is deemed inappropriate or breaks immersion for other players.
+
+This name is $WPermanant$n so choose wisely!

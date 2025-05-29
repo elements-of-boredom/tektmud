@@ -1,0 +1,25 @@
+
+Races in {{ .Name }} have an impact on your experiences in {{ .WorldName }}.
+Beyond the impacts to your roleplay, your racial choice is the foundation of your
+character's stats.  While some classes gain additional modifiers to those 
+stats, no class skills can make up for a significant deficit. However, 
+this choice can be changed once for free, and there is rumor
+it can be done for a price in certain reaches of the star systems.
+
+In {{ .WorldName }}, there are 5 stats that affect your gameplay, and they
+function similarly to most TTRPG systems. There are points in the
+game where a stat value is used as part of a check. The higher the value, the 
+better your odds are of passing that check.  Additionally, certain stats
+have an effect on combat damage given and received.
+
+Force: Determines your physical damage output and raw physical power for 
+    melee combat and strength-based actions.
+Reflex: Controls your ability to avoid incoming damage through dodging, 
+    positioning, and quick reactions.
+Acuity: Represents your mana pool, and governs both your technical proficiency
+    with complex systems and your magical/psionic damage potential.
+Insight: Provides psychological and mental resilience, increases the speed in
+    which you learn, and enhances your interactions with creatures throughout
+    {{ .WorldName }}.
+Heart: Represents your health pool, physical resilience, and overall 
+    endurance for surviving damage and extended activities. 

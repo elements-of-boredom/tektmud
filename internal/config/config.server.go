@@ -2,6 +2,7 @@ package configs
 
 type Server struct {
 	Name        string `yaml:"name"`
+	WorldName   string `yaml:"world_name"`
 	Seed        string `yaml:"seed"`
 	MaxCPUCores int    `yaml:"max_cpu_cores"`
 	Ports       []int  `yaml:"ports"`

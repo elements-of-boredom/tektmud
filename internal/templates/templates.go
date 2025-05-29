@@ -51,6 +51,10 @@ func (ct *ColorTemplate) Execute(data interface{}) (string, error) {
 
 // processColors converts MUD color codes to ANSI codes
 func (ct *ColorTemplate) processColors(text string, useTrueColor bool) string {
+	return processColors(text, useTrueColor)
+}
+
+func processColors(text string, useTrueColor bool) string {
 	// First handle escaped dollars ($$)
 	text = strings.ReplaceAll(text, "$$", "\x00DOLLAR\x00")
 
@@ -184,6 +188,11 @@ func NewTemplateManager() *TemplateManager {
 	return &TemplateManager{
 		templates: make(map[string]*ColorTemplate),
 	}
+}
+
+// Expose a way to apply coloring to non-templated strings
+func (tm *TemplateManager) Colorize(text string, useTrueColor bool) string {
+	return processColors(text, useTrueColor)
 }
 
 func (tm *TemplateManager) Process(templateName string, maybeData ...any) (string, error) {
