@@ -14,6 +14,8 @@ paths:
   localization: "localization"
   logs: "logs"
   templates: "templates"
+  races: "races"
+  classes: "classes"
 core:
   tick_rate : 100
   default_area: "newbie"

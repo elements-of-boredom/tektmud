@@ -1,0 +1,27 @@
+id: 1
+name: Human
+description: |
+  The most adaptable species in known space, humans have spread across countless
+  worlds and adapted to diverse environments. Their balanced capabilities 
+  and shorter lifespans drive them to achieve more in less time. They 
+  serve as diplomats, traders, and generalists throughout the galaxy. 
+  Their flexibility makes them suitable for any class or playstyle.
+
+buff_ids:
+  - 28 # xp Boost -ID is wrong
+stats:
+  force: 12
+  reflex: 12
+  acuity: 12
+  insight: 12
+  heart: 12
+resistances:
+  fire: 0
+  cold: 0
+  electrical: 0
+  blunt: 0
+  slashing: 0
+  poison : 0
+  radiation: 0
+  sonic: 0
+  suffocation: 0

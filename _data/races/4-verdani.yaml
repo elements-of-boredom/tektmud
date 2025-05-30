@@ -1,0 +1,31 @@
+id: 4
+name: Verdani
+description: |
+  Plant-based humanoids with bark-like skin and photosynthetic capabilities, 
+  the Verdani are living bridges between technology and nature. They can 
+  supplement their nutrition through light absorption and have natural 
+  regenerative abilities. Their deep understanding of biological systems makes
+  them exceptional at life sciences and terraforming. While not the fastest
+  of the creatures, they make up for it with incredible resilience
+  and patience.
+
+buff_ids:
+  - 33 # HP Regen in natural light
+  - 34 # Grants ASESS
+stats:
+  force: 11
+  reflex: 10
+  acuity: 12
+  insight: 12
+  heart: 15
+resistances:
+  fire: 0
+  cold: 0
+  electrical: 0
+  blunt: 0
+  slashing: 0
+  poison : 0
+  radiation: 0
+  sonic: 0
+  suffocation: 0
+

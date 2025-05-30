@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net"
 	"regexp"
+	"strconv"
 	"strings"
 	"tektmud/internal/character"
 	configs "tektmud/internal/config"
@@ -36,7 +37,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 	s.sendToPlayer(pc, fmt.Sprintf("Welcome to %s!\n", s.config.Server.Name))
 	pc.SetState(connections.StateInitialPrompt)
 
-	loginData := make(map[string]any)
+	loginData := make(map[string]string)
 	//Handle login loop.
 	for {
 		select {
@@ -66,8 +67,24 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 				//If we make it to here, we are through login (or user creation)
 				//Add the player to the world manager
 				//pass into our "game loop" that handles commands from the player
-				//Add our user to the world
-				char := character.NewCharacter(user.Id, pc.Username)
+				//Add our user's character to the world
+				gender := loginData["gender"]
+				race := loginData["race"]
+				class := loginData["class"]
+				characterName := loginData["character_name"]
+
+				raceData := character.GetRaceByName(race)
+				classData := character.GetClassByName(class)
+				if raceData == nil || classData == nil {
+					//We have a problem w/ the data files
+					//Return that message to the user and start over.
+					logger.Error("Unable to create a user because race or class data was invalid.")
+					s.sendToPlayer(pc, "Unable to create your character, the game files for your chosen class or race are invalid. Please try again.")
+					return
+				}
+				char := character.NewCharacter(user.Id, characterName, raceData.Id, classData.Id, gender) //TODO
+				user.Char = char
+				s.userManager.UpdateUser(user)
 				var roles []character.AdminRole = []character.AdminRole{}
 
 				//Map our user roles => character roles
@@ -100,7 +117,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 	}
 }
 
-func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]any) (*users.UserRecord, bool) {
+func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]string) (*users.UserRecord, bool) {
 
 	//see if at any point they entered "quit"
 	if strings.ToLower(input) == `quit` {
@@ -140,7 +157,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			}
 
 			pc.Username = user.Username
-			stateData["userid"] = user.Id
+			stateData["userid"] = fmt.Sprint(user.Id)
 			s.sendToPlayer(pc, "Enter your password.")
 			pc.SetState(connections.StatePassword)
 		}
@@ -180,9 +197,9 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			pc.SetState(connections.StateInitialPrompt)
 			return nil, false
 		}
-		userId64, ok := userId.(uint64)
-		if !ok {
-			logger.Error("Some how we cannot parse our userId")
+		userId64, err := strconv.ParseUint(userId, 10, 64)
+		if err != nil {
+			logger.Error("Some how we cannot parse our userId", "err", err)
 			s.sendToPlayer(pc, "There was an error, lets start over.")
 			s.sendToPlayer(pc, usernamePrompt)
 			pc.SetState(connections.StateInitialPrompt)
@@ -214,12 +231,17 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			return nil, false //login complete
 		} else {
 			tries, ok := stateData["attempts"]
+			var counter = 0
 			if !ok {
-				tries = 1
+				counter = 1
 			}
-			triesInt := tries.(int)
-			if triesInt < 3 {
+			counter, err := strconv.Atoi(tries)
+			if err != nil {
+				counter = 3
+			}
+			if counter < 3 {
 				s.sendToPlayer(pc, "Invalid password. Try again.")
+				stateData["attempts"] = fmt.Sprint(counter)
 			} else {
 				s.sendToPlayer(pc, "Maximum password attempts met. Goodbye!")
 				pc.SetState(connections.StateRejectedAuthentication)
@@ -255,7 +277,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		return nil, false
 
 	case connections.StateCollectEmail:
-		passString := stateData["password"].(string)
+		passString := stateData["password"]
 
 		ur, err := s.userManager.CreateUser(pc.Username, passString, input)
 		if err != nil {
@@ -331,9 +353,23 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				return nil, false
 			}
 
-			tpl, err := s.templateManager.Process(fmt.Sprintf("creation/races/%s", race))
+			statData := character.GetStatsForRace(race)
+			if statData == nil {
+				logger.Error("why is our race stat data nil?", "race", race)
+			}
+
+			//TODO address nil pointer derefernce risk
+			info := map[string]string{
+				"Force":   fmt.Sprint(statData.Force),
+				"Reflex":  fmt.Sprint(statData.Reflex),
+				"Acuity":  fmt.Sprint(statData.Acuity),
+				"Insight": fmt.Sprint(statData.Insight),
+				"Heart":   fmt.Sprint(statData.Heart),
+			}
+
+			tpl, err := s.templateManager.Process(fmt.Sprintf("creation/races/%s", strings.ToLower(race)), info)
 			if err != nil {
-				logger.Error("unable to load template", "tpl", fmt.Sprintf("creation/races/%s", race), "err", err)
+				logger.Error("unable to load template", "tpl", fmt.Sprintf("creation/races/%s", strings.ToLower(race)), "err", err)
 			}
 			s.sendToPlayer(pc, tpl)
 		}
@@ -379,8 +415,8 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			stateData["class"] = class
 			//class chosen, move on to name prompt
 			mudData["Class"] = class
-			mudData["Race"] = stateData["race"].(string)
-			mudData["Gender"] = stateData["gender"].(string)
+			mudData["Race"] = stateData["race"]
+			mudData["Gender"] = stateData["gender"]
 
 			sendNamePrompt(pc, s, mudData)
 		}
@@ -393,15 +429,23 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		}
 
 		if character.ValidateCharacterName(input) {
-			//Ok, time to create our character and head into the world!
-			s.sendToPlayer(pc, "Ok, we should make a character now.")
+			ur, err := s.userManager.GetUserByUsername(pc.Username)
+			if err != nil {
+				s.sendToPlayer(pc, "Error creating player, please try again.")
+				pc.SetState(connections.StateRejectedAuthentication)
+				return nil, false
+			}
+			stateData["character_name"] = input
+			return ur, true
 		}
+
 	}
 
 	//our catchall
 	return nil, false
 }
 
+// TODO - Use game files instead of hard coded
 func classFromInput(input []string) (string, error) {
 	if len(input) != 2 {
 		return "", fmt.Errorf("not a valid class choice")
@@ -413,7 +457,7 @@ func classFromInput(input []string) (string, error) {
 		return "Animist", nil
 	}
 	if strings.HasPrefix(class, "au") {
-		return "Auger", nil
+		return "Augur", nil
 	}
 	if strings.HasPrefix(class, "di") {
 		return "Distortionist", nil
@@ -454,13 +498,13 @@ func raceFromInput(input []string) (string, error) {
 	//We want to try and attempt to handle typo's and laziness
 	//So this wont be pretty
 	if strings.HasPrefix(race, "hu") {
-		return "Humans", nil
+		return "Human", nil
 	}
 	if strings.HasPrefix(race, "sy") {
-		return "Synthetics", nil
+		return "Synthetic", nil
 	}
 	if strings.HasPrefix(race, "um") {
-		return "Umbrans", nil
+		return "Umbran", nil
 	}
 	if strings.HasPrefix(race, "ve") {
 		return "Verdani", nil
@@ -472,7 +516,7 @@ func raceFromInput(input []string) (string, error) {
 		return "Stoneheart", nil
 	}
 	if strings.HasPrefix(race, "co") {
-		return "Corvans", nil
+		return "Corvan", nil
 	}
 
 	//If we made it here they typed something weird.

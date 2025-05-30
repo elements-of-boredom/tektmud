@@ -1,0 +1,30 @@
+id: 2
+name: Synthetic
+description: |
+  Human consciousness housed in artificial bodies, combining biological thought 
+  with mechanical precision. Created through advanced medical procedures that
+  preserve the brain while replacing everything else, they excel in technical 
+  fields and dangerous environments where their durable frames provide 
+  advantages. Despite their artificial bodies, they maintain fully human 
+  personalities and desires, though many believe the process strips them
+  of the natural intuition humans have.
+
+buff_ids: []
+stats:
+  force: 12
+  reflex: 11
+  acuity: 14
+  insight: 11
+  heart: 12
+resistances:
+  fire: 0
+  cold: 0
+  electrical: 0
+  blunt: 0
+  slashing: 0
+  poison : 20
+  radiation: 0
+  sonic: 0
+  suffocation: 100
+
+

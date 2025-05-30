@@ -1,0 +1,29 @@
+id: 7
+name: Corvan
+description: |
+  Highly intelligent avian humanoids descended from enhanced corvids, 
+  the Corvans combine fierce intellect with incredible dexterity. 
+  Their feathered bodies retain vestigial wings and their eyes miss 
+  nothing, making them exceptional scouts and technicians. They exhibit 
+  the problem-solving intelligence of their corvid ancestors amplified by 
+  genetic enhancement. Their quick wit and nimble fingers make them masters 
+  of complex tasks requiring precision and creativity.
+
+buff_ids:
+  - 55 # SEE HIDDEN
+stats:
+  force: 9
+  reflex: 16
+  acuity: 14
+  insight: 12
+  heart: 9
+resistances:
+  fire: 0
+  cold: 0
+  electrical: 0
+  blunt: 0
+  slashing: 0
+  poison : 0
+  radiation: 0
+  sonic: 0
+  suffocation: 0

@@ -1,0 +1,28 @@
+id: 6
+name: Stoneheart
+description: |
+  Massive, rocky humanoids with silicon-based physiology and incredible
+  durability, the Stoneheart are living mountains. Their crystalline 
+  formations can interface directly with technological systems, making 
+  them natural engineers despite their imposing appearance. They speak 
+  slowly and deliberately, thinking in geological timescales. Their 
+  incredible strength and resilience make them nearly unstoppable 
+  once they commit to action.
+
+buff_ids: []
+stats:
+  force: 15
+  reflex: 8
+  acuity: 11
+  insight: 10
+  heart: 16
+resistances:
+  fire: 20
+  cold: 20
+  electrical: 20
+  blunt: 0
+  slashing: 0
+  poison : 20
+  radiation: 0
+  sonic: -20
+  suffocation: 0

@@ -5,12 +5,27 @@ import (
 	"time"
 )
 
+type Stats struct {
+	Force   int `yaml:"force"`
+	Reflex  int `yaml:"reflex"`
+	Acuity  int `yaml:"acuity"`
+	Insight int `yaml:"insight"`
+	Heart   int `yaml:"heart"`
+}
+
 type Character struct {
-	Id      uint64   `yaml:"id"`
-	Name    string   `yaml:"name"`
-	RoomId  string   `yaml:"room_id"`
-	AreaId  string   `yaml:"area_id"`
+	Id      uint64 `yaml:"id"`
+	Name    string `yaml:"name"`
+	RaceId  int    `yaml:"race_id"`
+	Stats   Stats  `yaml:"stats"`
+	ClassId int    `yaml:"class_id"`
+	Gender  string `yaml:"gender"`
+
 	Balance *Balance `yaml:"balance"`
+
+	//Location information
+	RoomId string `yaml:"room_id"`
+	AreaId string `yaml:"area_id"`
 
 	Handlers []string
 	AdminCtx *AdminContext
@@ -21,10 +36,14 @@ type Character struct {
 }
 
 // NewCharacter creates a new character
-func NewCharacter(id uint64, name string) *Character {
+func NewCharacter(id uint64, name string, raceId, classId int, gender string) *Character {
 	char := &Character{
 		Id:       id,
 		Name:     name,
+		RaceId:   raceId,
+		Stats:    RacesById[raceId].Stats,
+		ClassId:  classId,
+		Gender:   gender,
 		Balance:  NewBalance(),
 		Handlers: make([]string, 0),
 		AdminCtx: nil, // No admin rights by default

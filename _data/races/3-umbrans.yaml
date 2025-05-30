@@ -1,0 +1,29 @@
+id: 3
+name: Umbran
+description: |
+  A mysterious alien species that exists partially outside normal reality, 
+  Umbrans appear as shifting, shadowy humanoid figures. Their natural 
+  ability to phase between dimensions makes them master infiltrators and 
+  scouts. Their natural form of communication uses subtle mental emanations,
+  but are able to project sound when they wish. Rarely seen unless they 
+  choose to be, their otherworldly nature makes them excellent at 
+  stealth and espionage operations.
+
+buff_ids:
+  - 57 # Phase ability - not real id
+stats:
+  force: 10
+  reflex: 15
+  acuity: 12
+  insight: 13
+  heart: 10
+resistances:
+  fire: 0
+  cold: 0
+  electrical: 0
+  blunt: 0
+  slashing: 0
+  poison : 0
+  radiation: 20
+  sonic: 0
+  suffocation: 0

@@ -10,7 +10,7 @@ of complex tasks requiring precision and creativity.
 
 Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
 {{ repeat 60 "-" }}
-      {{ pad 10 "9"}}{{ pad 10 "15"}}{{ pad 10 "15"}}{{ pad 10 "12"}}{{ pad 10 "9"}}
+      {{ pad 10 .Force }}{{ pad 10 .Reflex }}{{ pad 10 .Acuity }}{{ pad 10 .Insight }}{{ pad 10 .Heart }}
 
 Racial Bonus: 
   - Has SEE HIDDEN ability without requiring it to be trained.

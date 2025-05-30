@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"tektmud/internal/character"
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
 	"tektmud/internal/language"
@@ -83,6 +84,10 @@ func (s *MudServer) Initialize() error {
 	logger.Info("Initializing ...")
 
 	//Create any of our data directories that may be empty.
+
+	character.InitializeRaceData()
+	character.InitializeClassData()
+
 	//load any required things
 	s.worldManager.Start()
 	return nil

@@ -144,6 +144,7 @@ func (idx *UserIndex) Rebuild() error {
 	users := idx.scanForUserFiles()
 	idx.headerData.RecordCount = uint64(len(users))
 	idx.UsersByName = users
+	idx.NextUserId = idx.getNextAvailableUserId()
 
 	data := IndexHeader{IndexVersion: IndexVersion, RecordCount: uint64(len(users))}
 	//Write header (16 bytes)
@@ -187,6 +188,19 @@ func (idx *UserIndex) Rebuild() error {
 	idx.NextUserId++
 
 	return nil
+}
+
+func (idx *UserIndex) getNextAvailableUserId() uint64 {
+	if len(idx.UsersByName) > 0 {
+		var maxUserId uint64 = 0
+		for _, i := range idx.UsersByName {
+			if i > maxUserId {
+				maxUserId = i
+			}
+		}
+		return maxUserId + 1
+	}
+	return 0
 }
 
 func (idx *UserIndex) UserIdByName(name string) (uint64, bool) {

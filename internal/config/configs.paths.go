@@ -7,6 +7,8 @@ type Paths struct {
 	Localization string `yaml:"localization"`
 	Logs         string `yaml:"logs"`
 	Templates    string `yaml:"templates"`
+	Races        string `yaml:"races"`
+	Classes      string `yaml:"classes"`
 }
 
 func (p *Paths) Check() {
@@ -21,6 +23,14 @@ func (p *Paths) Check() {
 
 	if p.Localization == `` {
 		p.Localization = `localization`
+	}
+
+	if p.Races == `` {
+		p.Races = `races`
+	}
+
+	if p.Classes == `` {
+		p.Classes = `classes`
 	}
 
 	if p.Logs == `` {

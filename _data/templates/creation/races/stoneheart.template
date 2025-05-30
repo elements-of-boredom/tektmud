@@ -10,7 +10,7 @@ once they commit to action.
 
 Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
 {{ repeat 60 "-" }}
-      {{ pad 10 "16"}}{{ pad 10 "8"}}{{ pad 10 "11"}}{{ pad 10 "10"}}{{ pad 10 "17"}}
+      {{ pad 10 .Force }}{{ pad 10 .Reflex }}{{ pad 10 .Acuity }}{{ pad 10 .Insight }}{{ pad 10 .Heart }}
 
 Racial Bonus: 
   - Resistant to POISON damage.

@@ -169,6 +169,24 @@ func (um *UserManager) CreateUser(username string, password string, email string
 	return user, nil
 }
 
+// UpdateUser updates an existing user
+func (um *UserManager) UpdateUser(user *UserRecord) error {
+	um.mu.RLock()
+	userId, exists := um.userIndex.UsersByName[user.Username]
+	um.mu.RUnlock()
+
+	if !exists {
+		return fmt.Errorf("user '%s' not found", user.Username)
+	}
+
+	if userId != user.Id {
+		return fmt.Errorf("user Id mismatch")
+	}
+
+	userPath := filepath.Join(um.usersDir, fmt.Sprintf("%d.yaml", user.Id))
+	return um.saveUserFile(user, userPath)
+}
+
 // saveUserFile saves a user to a YAML file
 func (um *UserManager) saveUserFile(user *UserRecord, path string) error {
 	data, err := yaml.Marshal(user)
