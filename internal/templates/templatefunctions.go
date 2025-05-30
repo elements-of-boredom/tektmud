@@ -13,7 +13,7 @@ var (
 		"t":        language.T,
 		"pad":      pad,
 		"padLeft":  padLeft,
-		"padright": padRight,
+		"padRight": padRight,
 		"repeat": func(count int, val string) string {
 			if count < 1 {
 				return ""

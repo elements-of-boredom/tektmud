@@ -1,11 +1,12 @@
-{{ repeat 10 "/" }} Step 1 of 4 in Character Creation {{ repeat 10 "\\" }}
+{{pad 10 " " }}{{ repeat 10 "/" }} Step 1 of 4 in Character Creation {{ repeat 10 "\\" }}
 
-Please choose your character's gender:
+{{pad 10 " " }}Please choose your character's gender:
 
-    1. Male 
-    2. Female
+{{pad 10 " " }}    1. Male 
+{{pad 10 " " }}    2. Female
 
-This choice affects how other characters and NPCs will refer to your 
-character while in {{ .WorldName }}
+{{pad 3 " " }}This choice affects how other characters and NPCs will refer to your 
+{{pad 3 " " }}character while in {{ .WorldName }}
 
 Your choice?
+

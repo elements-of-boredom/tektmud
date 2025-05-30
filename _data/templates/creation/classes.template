@@ -1,0 +1,29 @@
+{{pad 10 " " }}{{ repeat 10 "/" }} Step 3 of 4 in Character Creation {{ repeat 10 "\\" }}
+
+Classes in {{ .WorldName }} are available for training from one the 10 
+primary Guilds. These Guilds formed over several hundred years as Humans
+spread out across the galaxy, encountering other races and sciences. Intent
+on growing in strength and power, these groups of adventurers first began
+as schools of study. Over time their abilities granted them power, and power
+led to control.  
+
+Today each Guild maintains their own facility on <PRIMARY CITY>,
+and most welcome outsiders, always looking to bolster their numbers, and in
+turn, their control.
+
+Your choice of a class will grant you access to 3 ability sets, unique to
+that class, which will serve you and your guild well. Training and more
+information for your class can be found within your Guild's facility once
+you leave your initiate training.
+
+Should you decide that your initial choice no longer fits who you wish 
+your character to be while exploring {{ .WorldName }}, you may switch classes by
+completing a set of tasks as dictated by a Guild's Intiate Secretary. The
+effort and cost for each Guild varies, and not all Guild's are as happy
+to see you go, as they were to welcome you in.
+
+  HELP           will show this prompt again.
+  CLASSES        will provide you the list of available classes.
+  CHOOSE <class> will bestow that class upon your character.
+
+

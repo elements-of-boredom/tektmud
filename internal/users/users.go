@@ -115,7 +115,7 @@ func (um *UserManager) PasswordMeetsMinimums(input string, username string) bool
 }
 
 func (um *UserManager) ValidatePassword(input string, userId uint64) bool {
-	//TODO: Encryption
+
 	if user, err := um.GetUserById(userId); err != nil {
 		return false
 	} else {

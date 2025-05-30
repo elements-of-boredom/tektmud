@@ -191,7 +191,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		}
 		//Finally, validate their password against their existing password.
 		if s.userManager.ValidatePassword(input, userId64) {
-			s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!", pc.Username))
+			s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!\n", pc.Username))
 			//Verify they have a character on their user. If not make one.
 			ur, err := s.userManager.GetUserByUsername(pc.Username)
 			if err != nil {
@@ -204,8 +204,13 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				return ur, true
 			}
 
-			s.sendToPlayer(pc, "It appears you've not finished character creation, lets do that now. Press any key to continue")
-			pc.SetState(connections.StateCharacterEval)
+			//Ok, a user with no character. initiate character creation
+			if err := sendGenderPrompt(pc, s, mudData); err != nil {
+				//there was an error we've already sent the error
+				// and set the state to cause us to leave
+				return nil, false
+			}
+
 			return nil, false //login complete
 		} else {
 			tries, ok := stateData["attempts"]
@@ -259,34 +264,12 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			return nil, false
 		}
 		logger.Info("Created user", "username", ur.Username)
-		//set authenticated
-		pc.SetState(connections.StateCharacterEval)
-		s.sendToPlayer(pc, "Ok, press enter to begin character creation.")
-		return nil, false
 
-	case connections.StateCharacterEval:
-		//Verify they have a character on their user. If not make one.
-		ur, err := s.userManager.GetUserByUsername(pc.Username)
-		if err != nil {
-			s.sendToPlayer(pc, "Unable to find your user file, please try again.")
-			pc.SetState(connections.StateRejectedAuthentication)
-			return nil, false
-		}
-		if ur.Char != nil {
-			//They have a character already, lets get into the world
-			pc.SetState(connections.StateAuthenticated)
-			return ur, true
-		} else {
-			//Put them through Character Creation flow
-			tpl, err := s.templateManager.Process("creation/gender", mudData)
-			if err != nil {
-				s.sendToPlayer(pc, err.Error())
-				pc.SetState(connections.StateRejectedAuthentication)
-				return nil, false
-			}
-			s.sendToPlayer(pc, tpl)
-			pc.SetState(connections.StateCharacterGenderChoice)
-		}
+		//Ok, initiate character creation
+		sendGenderPrompt(pc, s, mudData)
+		// if there was an error we've already sent the error
+		// and set the state to cause us to leave
+		// either way lets move on.
 		return nil, false
 
 	case connections.StateCharacterGenderChoice:
@@ -305,22 +288,242 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				return nil, false
 			}
 
-			//TODO get Race prompt.
+			s.sendToPlayer(pc, "Great! Next up is your choice of race.\n\n")
 
-			pc.SetState(connections.StateCharacterRaceChoice)
+			sendRacePrompt(pc, s, mudData)
+
 			return nil, false
 		}
 		s.sendToPlayer(pc, "Invalid input, try again.")
 		return nil, false
 
 	case connections.StateCharacterRaceChoice:
+		if input == "" {
+			return nil, false
+		}
+
+		cmd := strings.ToLower(input)
+
+		//Not actually listed but if they forget its the go-to
+		if cmd == `help` {
+			sendRacePrompt(pc, s, mudData)
+		}
+
+		if cmd == `info` {
+			tpl, err := s.templateManager.Process("creation/races/help", mudData)
+			if err != nil {
+				logger.Error("unable to load template", "tpl", "creation/races/help", "err", err)
+			}
+			s.sendToPlayer(pc, tpl)
+		}
+		if cmd == `races` {
+			tpl, err := s.templateManager.Process("creation/races/default", mudData)
+			if err != nil {
+				logger.Error("unable to load template", "tpl", "creation/races/default", "err", err)
+			}
+			s.sendToPlayer(pc, tpl)
+		}
+		if strings.HasPrefix(cmd, "learn") {
+			splits := strings.Split(cmd, " ")
+			race, err := raceFromInput(splits)
+			if err != nil {
+				s.sendToPlayer(pc, "Invalid racial choice.")
+				return nil, false
+			}
+
+			tpl, err := s.templateManager.Process(fmt.Sprintf("creation/races/%s", race))
+			if err != nil {
+				logger.Error("unable to load template", "tpl", fmt.Sprintf("creation/races/%s", race), "err", err)
+			}
+			s.sendToPlayer(pc, tpl)
+		}
+		if strings.HasPrefix(cmd, "choose") {
+			splits := strings.Split(cmd, " ")
+			race, err := raceFromInput(splits)
+			if err != nil {
+				s.sendToPlayer(pc, "Invalid racial choice.")
+				return nil, false
+			}
+			stateData["race"] = race
+			//Race chosen, move on to class prompt
+			sendClassPrompt(pc, s, mudData)
+		}
+
+		return nil, false
 
 	case connections.StateCharacterClassChoice:
+		if input == "" {
+			return nil, false
+		}
+		cmd := strings.ToLower(input)
+
+		if cmd == `help` {
+			sendClassPrompt(pc, s, mudData)
+		}
+
+		if cmd == `classes` {
+			tpl, err := s.templateManager.Process("creation/classes/allclasses", mudData)
+			if err != nil {
+				logger.Error("unable to load template", "tpl", "creation/classes/allclasses", "err", err)
+			}
+			s.sendToPlayer(pc, tpl)
+		}
+
+		if strings.HasPrefix(cmd, "choose") {
+			splits := strings.Split(cmd, " ")
+			class, err := classFromInput(splits)
+			if err != nil {
+				s.sendToPlayer(pc, "Invalid class choice.")
+				return nil, false
+			}
+			stateData["class"] = class
+			//class chosen, move on to name prompt
+			mudData["Class"] = class
+			mudData["Race"] = stateData["race"].(string)
+			mudData["Gender"] = stateData["gender"].(string)
+
+			sendNamePrompt(pc, s, mudData)
+		}
+
+		return nil, false
 
 	case connections.StateCharacterNameChoice:
+		if input == "" {
+			return nil, false
+		}
 
+		if character.ValidateCharacterName(input) {
+			//Ok, time to create our character and head into the world!
+			s.sendToPlayer(pc, "Ok, we should make a character now.")
+		}
 	}
 
 	//our catchall
 	return nil, false
+}
+
+func classFromInput(input []string) (string, error) {
+	if len(input) != 2 {
+		return "", fmt.Errorf("not a valid class choice")
+	}
+
+	class := input[1]
+
+	if strings.HasPrefix(class, "an") {
+		return "Animist", nil
+	}
+	if strings.HasPrefix(class, "au") {
+		return "Auger", nil
+	}
+	if strings.HasPrefix(class, "di") {
+		return "Distortionist", nil
+	}
+	if strings.HasPrefix(class, "fa") {
+		return "Fabricator", nil
+	}
+	if strings.HasPrefix(class, "ha") {
+		return "Harmonist", nil
+	}
+	if strings.HasPrefix(class, "me") {
+		return "Mentalist", nil
+	}
+	if strings.HasPrefix(class, "an") {
+		return "Animist", nil
+	}
+	if strings.HasPrefix(class, "sy") {
+		return "Symbiont", nil
+	}
+	if strings.HasPrefix(class, "sc") {
+		return "Scavenger", nil
+	}
+	if strings.HasPrefix(class, "va") {
+		return "Vanguard", nil
+	}
+	if strings.HasPrefix(class, "wa") {
+		return "Warden", nil
+	}
+	return "", fmt.Errorf("not a valid class choice")
+}
+
+func raceFromInput(input []string) (string, error) {
+	if len(input) != 2 {
+		return "", fmt.Errorf("not a valid race choice")
+	}
+
+	race := strings.ToLower(input[1])
+	//We want to try and attempt to handle typo's and laziness
+	//So this wont be pretty
+	if strings.HasPrefix(race, "hu") {
+		return "Humans", nil
+	}
+	if strings.HasPrefix(race, "sy") {
+		return "Synthetics", nil
+	}
+	if strings.HasPrefix(race, "um") {
+		return "Umbrans", nil
+	}
+	if strings.HasPrefix(race, "ve") {
+		return "Verdani", nil
+	}
+	if strings.HasPrefix(race, "vo") {
+		return "Voidborn", nil
+	}
+	if strings.HasPrefix(race, "st") {
+		return "Stoneheart", nil
+	}
+	if strings.HasPrefix(race, "co") {
+		return "Corvans", nil
+	}
+
+	//If we made it here they typed something weird.
+	return "", fmt.Errorf("not a valid race choice")
+}
+
+func sendGenderPrompt(pc *connections.PlayerConnection, s *MudServer, mudData map[string]string) error {
+	//Put them through Character Creation flow
+	tpl, err := s.templateManager.Process("creation/gender", mudData)
+	if err != nil {
+		s.sendToPlayer(pc, err.Error())
+		pc.SetState(connections.StateRejectedAuthentication)
+		return err
+	}
+	s.sendToPlayer(pc, tpl)
+	pc.SetState(connections.StateCharacterGenderChoice)
+	return nil
+}
+
+func sendRacePrompt(pc *connections.PlayerConnection, s *MudServer, mudData map[string]string) error {
+	tpl, err := s.templateManager.Process("creation/race", mudData)
+	if err != nil {
+		s.sendToPlayer(pc, err.Error())
+		pc.SetState(connections.StateRejectedAuthentication)
+		return err
+	}
+	s.sendToPlayer(pc, tpl)
+	pc.SetState(connections.StateCharacterRaceChoice)
+	return nil
+}
+
+func sendClassPrompt(pc *connections.PlayerConnection, s *MudServer, mudData map[string]string) error {
+	tpl, err := s.templateManager.Process("creation/classes", mudData)
+	if err != nil {
+		s.sendToPlayer(pc, err.Error())
+		pc.SetState(connections.StateRejectedAuthentication)
+		return err
+	}
+	s.sendToPlayer(pc, tpl)
+	pc.SetState(connections.StateCharacterClassChoice)
+	return nil
+}
+
+func sendNamePrompt(pc *connections.PlayerConnection, s *MudServer, mudData map[string]string) error {
+	tpl, err := s.templateManager.Process("creation/pickaname", mudData)
+	if err != nil {
+		s.sendToPlayer(pc, err.Error())
+		pc.SetState(connections.StateRejectedAuthentication)
+		return err
+	}
+	s.sendToPlayer(pc, tpl)
+	pc.SetState(connections.StateCharacterNameChoice)
+	return nil
 }

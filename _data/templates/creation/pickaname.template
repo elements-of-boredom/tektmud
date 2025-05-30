@@ -1,7 +1,15 @@
-{{ repeat 10 "/" }} Step 4 of 4 in Character Creation {{ repeat 10 "\" }}
+{{pad 10 " " }}{{ repeat 10 "/" }} Step 4 of 4 in Character Creation {{ repeat 10 "\\" }}
 
-Finally, it is time to choose your character's name. It should reflect
-the character you've created thus far in the process.
+Finally, it is time to choose your character's name. This is the last
+step before entering {{ .WorldName }}. It should reflect the character 
+you've created thus far in the process.
+
+As a reminder, to summarize thus far, you are:
+ - a {{ .Gender }}
+ - of the {{ .Race }} race
+ - of the {{ .Class }} class
+
+$r[TODO]: Allow to reset/goback?$n
 
 $WHint:$n
 Choose your name carefully, considering names that fit the otherworldly, 
@@ -13,4 +21,6 @@ home among the stars and strange worlds of {{ .WorldName }}.
 Please note that administrators reserve the right to require name changes 
 if a name is deemed inappropriate or breaks immersion for other players.
 
-This name is $WPermanant$n so choose wisely!
+This name is $WPERMANANT$n so choose wisely!
+
+

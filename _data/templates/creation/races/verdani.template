@@ -1,3 +1,4 @@
+
 Plant-based humanoids with bark-like skin and photosynthetic capabilities, 
 the Verdani are living bridges between technology and nature. They can 
 supplement their nutrition through light absorption and have natural 
@@ -7,9 +8,11 @@ creature in {{ .WorldName }}, they make up for it with incredible resilience
 and patience.
 
 Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
-{{ repeat "-" 60}}
+{{ repeat 60 "-" }}
       {{ pad 10 "11"}}{{ pad 10 "10"}}{{ pad 10 "13"}}{{ pad 10 "12"}}{{ pad 10 "16"}}
 
 Racial Bonus: 
   - Increased Health regeneration while in natural light.
   - Able to ASSESS most biological creatures.
+
+

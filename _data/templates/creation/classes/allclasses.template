@@ -1,0 +1,16 @@
+
+ The classes available to choose from are:
+
+ {{ padRight 15 "Animist"}}Life force manipulator with powerful healing
+ {{ padRight 15 "Augur"}}Curse specialists, writing doom and fate through dark magic
+ {{ padRight 15 "Distortionist"}}Artists of reality itself
+ {{ padRight 15 "Fabricator"}}Tech experts in drones and nanobots
+ {{ padRight 15 "Harmonist"}}Sound manipulators using magical crafting.
+ {{ padRight 15 "Mentalist"}}Psionic damage dealers
+ {{ padRight 15 "Symbiont"}}Able to form life bonds with alien creatures
+ {{ padRight 15 "Scavenger"}}Resourceful tinkerers with a love of explosives
+ {{ padRight 15 "Vanguard"}}Melee warrior with tactical leadership and weapon mastery
+ {{ padRight 15 "Warden"}}Mobile, shield bearing protectors
+ 
+ 
+ 

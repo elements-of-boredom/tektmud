@@ -1,3 +1,4 @@
+
 The most adaptable species in known space, humans have spread across countless
 worlds and adapted to diverse environments. Their balanced capabilities 
 and shorter lifespans drive them to achieve more in less time. They 
@@ -5,8 +6,10 @@ serve as diplomats, traders, and generalists throughout the galaxy.
 Their flexibility makes them suitable for any class or playstyle.
 
 Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
-{{ repeat "-" 60}}
+{{ repeat 60 "-"}}
       {{ pad 10 "12"}}{{ pad 10 "12"}}{{ pad 10 "12"}}{{ pad 10 "12"}}{{ pad 10 "12"}}
 
 Racial Bonus: 
   - Gains additional xp for some activities
+
+

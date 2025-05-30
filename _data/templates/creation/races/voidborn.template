@@ -1,0 +1,18 @@
+
+Descendants of humans who spent generations traveling between stars, the 
+Voidborn have adapted to life in deep space. Their pale, elongated 
+forms and enlarged eyes reflect their comfort in low-gravity, low-light 
+environments. They possess an intuitive understanding of stellar 
+navigation and cosmic phenomena. Having never known planetary life, 
+they feel most at home in the endless void between worlds.
+
+
+Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
+{{ repeat 60 "-" }}
+      {{ pad 10 "10"}}{{ pad 10 "13"}}{{ pad 10 "14"}}{{ pad 10 "15"}}{{ pad 10 "10"}}
+
+Racial Bonus: 
+  - REFLEX bonus in zero-gravity
+  - Has DARKVISION without requiring the ability to be trained.
+
+

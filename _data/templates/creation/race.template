@@ -1,0 +1,12 @@
+{{pad 10 " " }}{{ repeat 10 "/" }} Step 2 of 4 in Character Creation {{ repeat 10 "\\" }}
+
+     INFO          provides an overview of Racial impacts on your play
+     RACES         provides you a list of the available races.
+     LEARN  <race> provides background on the race.
+     CHOOSE <race> will make your character of the given race.
+
+  As mentioned in $WINFO$n, your choice for race will be impactful, but if you
+  are unsure, it is ok. You will have an opportunity later to change it once
+  you have familiarized yourself with {{ .WorldName }}.
+
+  

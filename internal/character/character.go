@@ -59,3 +59,10 @@ func (c *Character) GetLocation() (areaId string, roomId string) {
 func (c *Character) GetAdminContext() *AdminContext {
 	return c.AdminCtx
 }
+
+// TODO: Implement
+func ValidateCharacterName(input string) bool {
+	return len(input) > 1 //Allow names like Xi etc
+	//Needs to validate against all known character names
+	//Needs to validate against NPC name list.
+}
