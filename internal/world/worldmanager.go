@@ -105,10 +105,12 @@ func (wm *WorldManager) registerListeners() {
 	var inputListener = listeners.NewInputListener(wm.areaManager, wm.userManager)
 	var messageListener = listeners.NewMessageListener(wm.areaManager, wm.userManager, wm.connections, wm.tmpl)
 	var displayRoomListener = listeners.NewDisplayRoomListener(wm.areaManager, wm.userManager, wm.tmpl)
+	var quitListener = listeners.NewQuitListener(wm)
 
 	commands.RegisteredListener(inputListener, commands.Input{}.Name())
 	commands.RegisteredListener(messageListener, commands.Message{}.Name())
 	commands.RegisteredListener(displayRoomListener, commands.DisplayRoom{}.Name())
+	commands.RegisteredListener(quitListener, commands.PlayerQuit{}.Name())
 
 }
 
@@ -365,7 +367,7 @@ func (wm *WorldManager) RemoveCharacter(characterId uint64) {
 		delete(wm.connections, characterId)
 	}
 
-	log.Printf("Character %s left the world", character.Name)
+	logger.Printf("Character %s left the world", character.Name)
 }
 
 // SendToCharacter sends a message to a specific character

@@ -26,3 +26,10 @@ type DisplayRoom struct {
 
 // Command interface
 func (m DisplayRoom) Name() string { return `DisplayRoom` }
+
+type PlayerQuit struct {
+	UserId uint64
+}
+
+// Command interface
+func (pq PlayerQuit) Name() string { return `PlayerQuit` }
