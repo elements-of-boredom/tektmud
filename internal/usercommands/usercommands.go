@@ -8,6 +8,8 @@ import (
 var (
 	UserHandlers = map[string]UserCommandHandler{
 		`move`: {Move, false},
+		`look`: {Look, false},
+		`l`:    {Look, false}, //provide simple shortcut for `look`
 	}
 )
 
