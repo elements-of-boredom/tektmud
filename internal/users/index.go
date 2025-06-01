@@ -200,7 +200,7 @@ func (idx *UserIndex) getNextAvailableUserId() uint64 {
 		}
 		return maxUserId + 1
 	}
-	return 0
+	return 1 //Start at 1, so we can use 0 for "system"
 }
 
 func (idx *UserIndex) UserIdByName(name string) (uint64, bool) {

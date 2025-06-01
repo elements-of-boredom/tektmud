@@ -501,7 +501,7 @@ func (h *BuilderHandler) editRoomTitle(ctx *InputContext, room *rooms.Room, newT
 	// If this is the current room, show the updated room to the character
 	currentAreaID, currentRoomID := ctx.Character.GetLocation()
 	if room.AreaId == currentAreaID && room.Id == currentRoomID {
-		ctx.World.ShowRoom(ctx.Character)
+		room.ShowRoom(ctx.Character.Id)
 	}
 
 	return HandlerStop, nil
@@ -525,7 +525,7 @@ func (h *BuilderHandler) editRoomDescription(ctx *InputContext, room *rooms.Room
 	// If this is the current room, show the updated room to the character
 	currentAreaId, currentRoomId := ctx.Character.GetLocation()
 	if room.AreaId == currentAreaId && room.Id == currentRoomId {
-		ctx.World.ShowRoom(ctx.Character)
+		room.ShowRoom(ctx.Character.Id)
 	}
 
 	return HandlerStop, nil

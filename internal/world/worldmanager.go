@@ -7,8 +7,10 @@ import (
 	"strings"
 	"sync"
 	"tektmud/internal/character"
+	"tektmud/internal/commands"
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
+	"tektmud/internal/listeners"
 	"tektmud/internal/logger"
 	"tektmud/internal/rooms"
 	"tektmud/internal/templates"
@@ -30,15 +32,16 @@ type QueuedInput struct {
 }
 
 type WorldManager struct {
-	Config        *WorldConfig
-	areaManager   *rooms.AreaManager
-	tickManager   TickManager
-	userManager   *users.UserManager
-	tmpl          *templates.TemplateManager
-	characters    map[uint64]*character.Character            //CharacterId => Character
-	connections   map[uint64]*connections.PlayerConnection   //CharacterId => PlayerConnection
-	roomOccupants map[string]map[uint64]*character.Character //areaId:roomId => characters
-	inputHandlers map[string]InputHandler                    //InputHandler.Id => InputHandler
+	Config      *WorldConfig
+	tickManager TickManager
+	userManager *users.UserManager
+	areaManager *rooms.AreaManager
+	tmpl        *templates.TemplateManager
+	characters  map[uint64]*character.Character          //CharacterId => Character
+	connections map[uint64]*connections.PlayerConnection //CharacterId => PlayerConnection
+
+	inputHandlers    map[string]InputHandler //InputHandler.Id => InputHandler
+	commandProcessor *commands.QueueProcessor
 	//Game loop
 	ticker   *time.Ticker
 	stopChan chan struct{}
@@ -62,18 +65,17 @@ func NewWorldManager(um *users.UserManager, tm *templates.TemplateManager) *Worl
 	}
 
 	return &WorldManager{
-		Config:        wc,
-		areaManager:   rooms.NewAreaManager(),
-		tickManager:   *NewTickManager(),
-		userManager:   um,
-		tmpl:          tm,
-		characters:    make(map[uint64]*character.Character),
-		connections:   make(map[uint64]*connections.PlayerConnection),
-		roomOccupants: make(map[string]map[uint64]*character.Character),
-		inputHandlers: make(map[string]InputHandler),
-		stopChan:      make(chan struct{}),
-		inputQueue:    make(chan *QueuedInput, 1000), //Buffer for up to 1000 inputs
-		maxInputQueue: 1,                             //Max inputs per character in queue
+		Config:           wc,
+		tickManager:      *NewTickManager(),
+		commandProcessor: commands.NewQueueProcessor(wc.TickRate),
+		userManager:      um,
+		tmpl:             tm,
+		characters:       make(map[uint64]*character.Character),
+		connections:      make(map[uint64]*connections.PlayerConnection),
+		inputHandlers:    make(map[string]InputHandler),
+		stopChan:         make(chan struct{}),
+		inputQueue:       make(chan *QueuedInput, 1000), //Buffer for up to 1000 inputs
+		maxInputQueue:    1,                             //Max inputs per character in queue
 	}
 }
 
@@ -81,24 +83,33 @@ func (wm *WorldManager) Initialize() error {
 	logger.Info("Initializing world engine...")
 
 	//Load all areas
-	if err := wm.areaManager.LoadAllAreas(); err != nil {
-		return fmt.Errorf("failed to load areas: %w", err)
-	}
-
-	//Validate the room connections
-	if errors := wm.areaManager.ValidateRoomConnections(); len(errors) > 0 {
-		logger.Warn("Warning: Found rooms with connection errors:", "count", len(errors))
-		for _, err := range errors {
-			log.Printf(" - %v", err)
-		}
+	if am, err := rooms.Initialize(); err != nil {
+		return err
+	} else {
+		wm.areaManager = am
 	}
 
 	//Somehow get all our registered handlers
-	wm.registerHandlers()
+	//wm.registerHandlers()
+	//Register listeners
+	wm.registerListeners()
 
 	logger.Info("Loaded world.", "areas", len(wm.areaManager.GetAreaList()), "rooms", wm.areaManager.GetRoomCount())
 
 	return nil
+}
+
+func (wm *WorldManager) registerListeners() {
+
+	//Register our input listener
+	var inputListener = listeners.NewInputListener(wm.areaManager, wm.userManager)
+	var messageListener = listeners.NewMessageListener(wm.areaManager, wm.userManager, wm.connections, wm.tmpl)
+	var displayRoomListener = listeners.NewDisplayRoomListener(wm.areaManager, wm.userManager, wm.tmpl)
+
+	commands.RegisteredListener(inputListener, commands.Input{}.Name())
+	commands.RegisteredListener(messageListener, commands.Message{}.Name())
+	commands.RegisteredListener(displayRoomListener, commands.DisplayRoom{}.Name())
+
 }
 
 // Start begins the game loop
@@ -111,6 +122,9 @@ func (wm *WorldManager) Start() {
 	wm.running = true
 	wm.ticker = time.NewTicker(wm.Config.TickRate)
 	wm.mu.Unlock()
+
+	//start processing commands
+	wm.commandProcessor.Start()
 
 	log.Printf("Starting world engine with tick rate: %v", wm.Config.TickRate)
 
@@ -220,7 +234,7 @@ func (wm *WorldManager) tick() {
 	// - Update any world state
 }
 
-// HandleInput processes input from a character (now queues it for processing)
+// HandleInput processes input from a character passed in from the server
 func (wm *WorldManager) HandleInput(characterId uint64, input string) error {
 	wm.mu.RLock()
 	_, exists := wm.characters[characterId]
@@ -230,25 +244,37 @@ func (wm *WorldManager) HandleInput(characterId uint64, input string) error {
 		return fmt.Errorf("character %d not found", characterId)
 	}
 
-	// Queue the input for processing (with timeout to prevent blocking)
-	queuedInput := &QueuedInput{
-		CharacterId: characterId,
-		Input:       input,
-		Timestamp:   time.Now(),
-	}
+	//Create a command type of Input
+	//Even though we don't queue user's we still feed it through the queue
+	//incase something else cares about the action as well.
+	commands.QueueGameCommand(characterId, commands.Input{
+		UserId: characterId,
+		Text:   input,
+	})
 
-	select {
-	case wm.inputQueue <- queuedInput:
-		// Successfully queued
-		return nil
-	case <-time.After(100 * time.Millisecond):
-		// Queue is full, drop the input
-		return fmt.Errorf("input queue full for character %d", characterId)
-	}
+	//TODO: Need to create an Input listener that will run through usercommands.
+
+	/*
+		// Queue the input for processing (with timeout to prevent blocking)
+		queuedInput := &QueuedInput{
+			CharacterId: characterId,
+			Input:       input,
+			Timestamp:   time.Now(),
+		}
+
+		select {
+		case wm.inputQueue <- queuedInput:
+			// Successfully queued
+			return nil
+		case <-time.After(100 * time.Millisecond):
+			// Queue is full, drop the input
+			return fmt.Errorf("input queue full for character %d", characterId)
+		}
+	*/
+	return nil
 }
 
 // HandleInputDirect processes input immediately (for admin commands or special cases)
-// Or is called from the tick process after being dequeued
 func (wm *WorldManager) HandleInputImmediate(characterId uint64, input string) error {
 	wm.mu.RLock()
 	character, exists := wm.characters[characterId]
@@ -269,25 +295,27 @@ func (wm *WorldManager) AddCharacter(character *character.Character, conn *conne
 	}
 
 	// Determine spawn location
-	areaID, roomID := wm.getSpawnLocation(character)
-	character.SetLocation(areaID, roomID)
+	areaId, roomId := wm.getSpawnLocation(character)
+	character.SetLocation(areaId, roomId)
 
 	// Add to world
 	wm.mu.Lock()
 	wm.characters[character.Id] = character
 	wm.connections[character.Id] = conn
-	wm.addToRoom(character, areaID, roomID)
+	rooms.AddToRoom(character.Id, areaId, roomId)
 	wm.mu.Unlock()
 	// Start regeneration for this character
 	//wm.startCharacterRegeneration(character.Id)
 
 	// Show the room to the character
-	wm.ShowRoom(character)
+	if r, exists := wm.areaManager.GetRoom(areaId, roomId); exists {
+		r.ShowRoom(character.Id)
 
-	// Announce arrival to room (except to the character themselves)
-	wm.SendToRoom(areaID, roomID, character.Name+" has entered the game.", character.Id)
+		// Announce arrival to room (except to the character themselves)
+		r.SendText(character.Name+" has entered the game.", character.Id)
+	}
 
-	log.Printf("Character %s entered the world at %s:%s", character.Name, areaID, roomID)
+	log.Printf("Character %s entered the world at %s:%s", character.Name, areaId, roomId)
 	return nil
 }
 
@@ -318,15 +346,17 @@ func (wm *WorldManager) RemoveCharacter(characterId uint64) {
 
 	// Announce departure
 	areaID, roomID := character.GetLocation()
-	wm.SendToRoom(areaID, roomID, character.Name+" has left the game.", characterId)
+	if r, exists := wm.areaManager.GetRoom(areaID, roomID); exists {
+		r.SendText(character.Name+" has left the game.", characterId)
+	}
 
 	// Save character state (facade)
 	//wm.userManager.SaveUser(character)
 
-	// Remove from room and world
+	// Remove from world
 	wm.mu.Lock()
-	wm.removeFromRoom(character, areaID, roomID)
 	delete(wm.characters, characterId)
+	rooms.RemoveFromRoom(character.Id, areaID, roomID)
 	wm.mu.Unlock()
 
 	// Close connection and clean up
@@ -336,94 +366,6 @@ func (wm *WorldManager) RemoveCharacter(characterId uint64) {
 	}
 
 	log.Printf("Character %s left the world", character.Name)
-}
-
-// MoveCharacter attempts to move a character in a direction
-func (wm *WorldManager) MoveCharacter(character *character.Character, direction rooms.Direction) (bool, string) {
-	areaID, roomID := character.GetLocation()
-
-	// Find the exit
-	exit, exists := wm.areaManager.GetRoomExit(areaID, roomID, direction)
-	if !exists {
-		return false, "You can't go that way."
-	}
-
-	// Parse destination
-	destAreaID := areaID
-	destRoomID := exit.Destination
-
-	if len(exit.Destination) > 0 && exit.Destination != roomID {
-		parts := rooms.SplitDestination(exit.Destination)
-		if len(parts) == 2 {
-			destAreaID = parts[0]
-			destRoomID = parts[1]
-		}
-	}
-
-	// Validate destination exists
-	if _, exists := wm.areaManager.GetRoom(destAreaID, destRoomID); !exists {
-		return false, "That exit leads nowhere."
-	}
-
-	// Perform the move
-	wm.mu.Lock()
-	wm.removeFromRoom(character, areaID, roomID)
-	character.SetLocation(destAreaID, destRoomID)
-	wm.addToRoom(character, destAreaID, destRoomID)
-	wm.mu.Unlock()
-
-	// Announce movement
-	wm.SendToRoom(areaID, roomID, character.Name+" leaves "+string(direction)+".", character.Id)
-	wm.SendToRoom(destAreaID, destRoomID, character.Name+" arrives.", character.Id)
-
-	return true, ""
-}
-
-// ShowRoom displays a room description to a character
-func (wm *WorldManager) ShowRoom(character *character.Character) {
-	areaId, roomId := character.GetLocation()
-	roomDesc := wm.areaManager.FormatRoom(areaId, roomId, wm.tmpl)
-
-	// Add other characters in the room
-	wm.mu.RLock()
-	roomKey := areaId + ":" + roomId
-	if occupants, exists := wm.roomOccupants[roomKey]; exists {
-		var others []string
-		for _, other := range occupants {
-			if other.Id != character.Id {
-				others = append(others, other.Name)
-			}
-		}
-		if len(others) > 0 {
-			roomDesc += "\n\nAlso here: " + strings.Join(others, ", ")
-		}
-	}
-	wm.mu.RUnlock()
-
-	wm.SendToCharacter(character, roomDesc)
-}
-
-// addToRoom adds a character to a room's occupant list
-func (wm *WorldManager) addToRoom(c *character.Character, areaID, roomID string) {
-	roomKey := areaID + ":" + roomID
-	if wm.roomOccupants[roomKey] == nil {
-		var charmap = make(map[uint64]*character.Character)
-		wm.roomOccupants[roomKey] = charmap
-	}
-	wm.roomOccupants[roomKey][c.Id] = c
-}
-
-// removeFromRoom removes a character from a room's occupant list
-func (wm *WorldManager) removeFromRoom(character *character.Character, areaID, roomID string) {
-	roomKey := areaID + ":" + roomID
-	if occupants, exists := wm.roomOccupants[roomKey]; exists {
-		delete(occupants, character.Id)
-
-		// Clean up empty room
-		if len(occupants) == 0 {
-			delete(wm.roomOccupants, roomKey)
-		}
-	}
 }
 
 // SendToCharacter sends a message to a specific character
@@ -437,46 +379,14 @@ func (wm *WorldManager) SendToCharacter(character *character.Character, message 
 	}
 }
 
-// SendToRoom sends a message to all characters in a room except excluded ones
-func (wm *WorldManager) SendToRoom(areaID, roomID, message string, excludeIDs ...uint64) {
-	wm.mu.RLock()
-	defer wm.mu.RUnlock()
-	roomKey := areaID + ":" + roomID
-	occupants, exists := wm.roomOccupants[roomKey]
-	if !exists {
-		return
-	}
-
-	// Create exclusion map for efficiency
-	exclude := make(map[uint64]bool)
-	for _, id := range excludeIDs {
-		exclude[id] = true
-	}
-
-	// Send to all non-excluded occupants
-	for _, character := range occupants {
-		if !exclude[character.Id] {
-			if conn, exists := wm.connections[character.Id]; exists {
-				conn.Conn.Write([]byte(message + "\n"))
-			}
-		}
-	}
-}
-
 func (wm *WorldManager) registerHandlers() {
 	quit := NewQuitHandler()
-	movement := NewMovementHandler()
-	look := NewLookHandler()
-	say := NewSayHandler()
 	defaultHandler := NewDefaultHandler()
 	builder := NewBuilderHandler()
 	builderHelp := NewBuilderHelpHandler()
 
 	wm.inputHandlers = map[string]InputHandler{
 		quit.Name():        quit,
-		movement.Name():    movement,
-		look.Name():        look,
-		say.Name():         say,
 		builder.Name():     builder,
 		builderHelp.Name(): builderHelp,
 
@@ -503,9 +413,6 @@ func (wm *WorldManager) setupDefaultHandlers(c *character.Character) {
 
 	//TODO: Fix this ugly string crap
 	c.AddHandler("quit")
-	c.AddHandler("movement")
-	c.AddHandler("look")
-	c.AddHandler("say")
 	c.AddHandler("default") // Always last
 
 	if c.AdminCtx != nil {

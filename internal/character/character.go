@@ -44,17 +44,20 @@ func NewCharacter(id uint64, name string, raceId, classId int, gender string) *C
 		Stats:    RacesById[raceId].Stats,
 		ClassId:  classId,
 		Gender:   gender,
-		Balance:  NewBalance(),
 		Handlers: make([]string, 0),
 		AdminCtx: nil, // No admin rights by default
 	}
 
-	// Set default balance cooldowns
-	char.Balance.SetCooldown(AttackBalance, 2*time.Second)
-	char.Balance.SetCooldown(HealingBalance, 4*time.Second)
-	char.Balance.SetCooldown(MovementBalance, 200*time.Millisecond)
-
+	char.ResetBalances()
 	return char
+}
+
+func (c *Character) ResetBalances() {
+	c.Balance = NewBalance()
+	// Set default balance cooldowns
+	c.Balance.SetCooldown(AttackBalance, 2*time.Second)
+	c.Balance.SetCooldown(HealingBalance, 4*time.Second)
+	c.Balance.SetCooldown(MovementBalance, 200*time.Millisecond)
 }
 
 func (c *Character) AddHandler(name string) {

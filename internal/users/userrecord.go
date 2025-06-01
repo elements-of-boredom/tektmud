@@ -3,6 +3,7 @@ package users
 import (
 	"slices"
 	"tektmud/internal/character"
+	"tektmud/internal/connections"
 )
 
 var (
@@ -19,6 +20,9 @@ type UserRecord struct {
 	Password string               `yaml:"password"`
 	Roles    []string             `yaml:"roles"`
 	Char     *character.Character `yaml:"character"`
+
+	//isDisabled bool
+	conn *connections.PlayerConnection
 }
 
 func (ur *UserRecord) IsAdmin() bool {
@@ -32,4 +36,18 @@ func (ur *UserRecord) IsOwner() bool {
 }
 func (ur *UserRecord) HasRole(role string) bool {
 	return slices.Contains(ur.Roles, role)
+}
+func (ur *UserRecord) IsDisabled() bool {
+	return false //TODO impelment this
+}
+
+func (ur *UserRecord) SetConnection(c *connections.PlayerConnection) {
+	ur.conn = c
+}
+
+func (ur *UserRecord) SendText(input string) {
+	//Enqueue message
+	if ur.conn != nil {
+		ur.conn.Conn.Write([]byte(input))
+	}
 }

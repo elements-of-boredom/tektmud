@@ -68,25 +68,30 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 				//Add the player to the world manager
 				//pass into our "game loop" that handles commands from the player
 				//Add our user's character to the world
-				gender := loginData["gender"]
-				race := loginData["race"]
-				class := loginData["class"]
-				characterName := loginData["character_name"]
+				if user.Char == nil {
+					gender := loginData["gender"]
+					race := loginData["race"]
+					class := loginData["class"]
+					characterName := loginData["character_name"]
 
-				raceData := character.GetRaceByName(race)
-				classData := character.GetClassByName(class)
-				if raceData == nil || classData == nil {
-					//We have a problem w/ the data files
-					//Return that message to the user and start over.
-					logger.Error("Unable to create a user because race or class data was invalid.")
-					s.sendToPlayer(pc, "Unable to create your character, the game files for your chosen class or race are invalid. Please try again.")
-					return
+					raceData := character.GetRaceByName(race)
+					classData := character.GetClassByName(class)
+					if raceData == nil || classData == nil {
+						//We have a problem w/ the data files
+						//Return that message to the user and start over.
+						logger.Error("Unable to create a user because race or class data was invalid.")
+						s.sendToPlayer(pc, "Unable to create your character, the game files for your chosen class or race are invalid. Please try again.")
+						return
+					}
+					char := character.NewCharacter(user.Id, characterName, raceData.Id, classData.Id, gender) //TODO
+					user.Char = char
+					s.userManager.UpdateUser(user)
 				}
-				char := character.NewCharacter(user.Id, characterName, raceData.Id, classData.Id, gender) //TODO
-				user.Char = char
-				s.userManager.UpdateUser(user)
 				var roles []character.AdminRole = []character.AdminRole{}
-
+				//Reset their balances on re-entry
+				//I -don't- think this will be abusable on disconnects... we'd have to see
+				//If so i'll have to start storing balances in character files.
+				user.Char.ResetBalances()
 				//Map our user roles => character roles
 				//TODO properly merge User & Character.
 				if user.IsAdmin() {
@@ -99,9 +104,10 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 					roles = append(roles, character.AdminRoleOwner)
 				}
 				if len(roles) > 0 {
-					char.AdminCtx = character.NewAdminContext(roles...)
+					user.Char.AdminCtx = character.NewAdminContext(roles...)
 				}
-				s.worldManager.AddCharacter(char, pc)
+				user.SetConnection(pc)
+				s.worldManager.AddCharacter(user.Char, pc)
 
 				loginData = nil
 				logger.GetLogger().LogPlayerConnect(user.Id, user.Username, pc.Conn.RemoteAddr().String())

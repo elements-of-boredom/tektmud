@@ -1,15 +1,17 @@
 package rooms
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
-	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
-	configs "tektmud/internal/config"
-	"tektmud/internal/logger"
-	"tektmud/internal/templates"
+	"tektmud/internal/character"
+	"tektmud/internal/commands"
+)
+
+var (
+	mu                                = sync.Mutex{}
+	roomOccupants map[string][]uint64 = make(map[string][]uint64) //areaId:roomId => userid
 )
 
 // Direction represents movement directions
@@ -98,139 +100,71 @@ type Exit struct {
 	Keywords    []string  `json:"keywords,omitempty"` // For special exits
 }
 
-type AreaManager struct {
-	areas map[string]*Area
-	mu    sync.RWMutex
-}
-
-func NewAreaManager() *AreaManager {
-	return &AreaManager{
-		areas: make(map[string]*Area),
+// Used just to see if the request is valid for attempting movement
+// Doesn't return if they can actually go that way etc.
+func (r *Room) IsExitCommand(input string) bool {
+	//Check for special exits first.
+	exists := false
+	for i := range r.Exits {
+		exists = slices.Contains(r.Exits[i].Keywords, input)
 	}
-}
-
-func getDataPath() string {
-	c := configs.GetConfig()
-	areaDataPath := filepath.Join(c.Paths.RootDataDir, c.Paths.WorldFiles)
-	return areaDataPath
-}
-
-// LoadArea loads an area from file
-func (am *AreaManager) LoadArea(areaID string) error {
-	am.mu.Lock()
-	defer am.mu.Unlock()
-
-	filename := filepath.Join(getDataPath(), areaID+".json")
-	data, err := os.ReadFile(filename)
-	if err != nil {
-		return fmt.Errorf("failed to read area file %s: %w", filename, err)
+	//We found a special exit, dont bother w/ the rest
+	if exists {
+		return exists
 	}
 
-	var area Area
-	if err := json.Unmarshal(data, &area); err != nil {
-		return fmt.Errorf("failed to parse area file %s: %w", filename, err)
-	}
-
-	// Initialize rooms map if nil
-	if area.Rooms == nil {
-		area.Rooms = make(map[string]*Room)
-	}
-
-	// Set area ID for all rooms
-	for _, room := range area.Rooms {
-		room.AreaId = area.Id
-	}
-
-	am.areas[area.Id] = &area
-	return nil
-}
-
-// LoadAllAreas loads all area files from the data directory
-func (am *AreaManager) LoadAllAreas() error {
-	areaDataPath := getDataPath()
-	dirEntries, err := os.ReadDir(areaDataPath)
-	if err != nil {
-		return fmt.Errorf("failed to read area directory %s, %w", areaDataPath, err)
-	}
-
-	var loadErrors []error
-	for _, file := range dirEntries {
-		if filepath.Ext(file.Name()) == ".json" {
-			areaID := file.Name()[:len(file.Name())-5] // Remove .json extension
-			if err := am.LoadArea(areaID); err != nil {
-				loadErrors = append(loadErrors, err)
+	// Parse direction
+	dirStr := strings.ToLower(input)
+	_, exists = DirectionAliases[dirStr]
+	if !exists {
+		// Try full direction names
+		for _, dir := range Directions {
+			if string(dir) == dirStr {
+				exists = true
+				break
 			}
 		}
 	}
 
-	if len(loadErrors) > 0 {
-		return fmt.Errorf("failed to load some areas: %v", loadErrors)
+	return exists
+}
+
+// Searches a room for an exit.
+func (r *Room) FindExit(input string) *Exit {
+
+	if len(r.Exits) == 0 {
+		return nil
 	}
 
-	return nil
-}
-
-// GetArea returns an area by ID
-func (am *AreaManager) GetArea(areaID string) (*Area, bool) {
-	am.mu.RLock()
-	defer am.mu.RUnlock()
-
-	area, exists := am.areas[areaID]
-	return area, exists
-}
-
-func (am *AreaManager) UpsertArea(areaId string, area *Area) {
-	am.mu.Lock()
-	defer am.mu.Unlock()
-	am.areas[areaId] = area
-}
-
-// GetRoom returns a room by area and room ID
-func (am *AreaManager) GetRoom(areaID, roomID string) (*Room, bool) {
-	am.mu.RLock()
-	defer am.mu.RUnlock()
-
-	area, exists := am.areas[areaID]
-	if !exists {
-		return nil, false
-	}
-
-	room, exists := area.Rooms[roomID]
-	return room, exists
-}
-
-// GetRoomExit finds an exit from a room in the given direction
-func (am *AreaManager) GetRoomExit(areaID, roomID string, direction Direction) (*Exit, bool) {
-	room, exists := am.GetRoom(areaID, roomID)
-	if !exists {
-		return nil, false
-	}
-
-	for i := range room.Exits {
-		if room.Exits[i].Direction == direction {
-			return &room.Exits[i], true
+	//Check for special exits first.
+	for i := range r.Exits {
+		if slices.Contains(r.Exits[i].Keywords, input) {
+			return &r.Exits[i]
 		}
 	}
 
-	return nil, false
-}
-
-// FindExitByKeyword finds a special exit by keyword
-func (am *AreaManager) FindExitByKeyword(areaID, roomID, keyword string) (*Exit, bool) {
-	room, exists := am.GetRoom(areaID, roomID)
+	// Parse direction
+	dirStr := strings.ToLower(input)
+	direction, exists := DirectionAliases[dirStr]
 	if !exists {
-		return nil, false
-	}
-
-	for i := range room.Exits {
-		for _, kw := range room.Exits[i].Keywords {
-			if kw == keyword {
-				return &room.Exits[i], true
+		// Try full direction names
+		for _, dir := range Directions {
+			if string(dir) == dirStr {
+				direction = dir
+				exists = true
+				break
 			}
 		}
 	}
 
-	return nil, false
+	//Check known exits
+	for i := range r.Exits {
+		if r.Exits[i].Direction == direction {
+			return &r.Exits[i]
+		}
+	}
+
+	return nil
 }
 
 // splitDestination parses destination strings like "area:room" or just "room"
@@ -243,155 +177,91 @@ func SplitDestination(destination string) []string {
 	return []string{destination}
 }
 
-// ValidateRoomConnections checks that all room exits point to valid destinations
-func (am *AreaManager) ValidateRoomConnections() []error {
-	am.mu.RLock()
-	defer am.mu.RUnlock()
-
-	var errors []error
-
-	for areaID, area := range am.areas {
-		for roomID, room := range area.Rooms {
-			for _, exit := range room.Exits {
-				// Parse destination (could be "areaID:roomID" or just "roomID")
-				destAreaID := areaID
-				destRoomID := exit.Destination
-
-				if len(exit.Destination) > 0 && exit.Destination[0:1] != ":" {
-					// Check if destination contains area specification
-					parts := SplitDestination(exit.Destination)
-					if len(parts) == 2 {
-						destAreaID = parts[0]
-						destRoomID = parts[1]
-					}
-				}
-
-				// Validate destination exists
-				if _, exists := am.GetRoom(destAreaID, destRoomID); !exists {
-					errors = append(errors, fmt.Errorf(
-						"room %s:%s has exit %s pointing to invalid destination %s:%s",
-						areaID, roomID, exit.Direction, destAreaID, destRoomID,
-					))
-				}
-			}
-		}
+func LoadRoom(areaId, roomId string) *Room {
+	if r, exists := areaManager.GetRoom(areaId, roomId); !exists {
+		return nil
+	} else {
+		return r
 	}
-
-	return errors
 }
 
-// GetAreaList returns a list of all loaded area IDs
-func (am *AreaManager) GetAreaList() []string {
-	am.mu.RLock()
-	defer am.mu.RUnlock()
+func MoveToRoom(user *character.Character, origin *Room, destination *Room) error {
 
-	areas := make([]string, 0, len(am.areas))
-	for areaID := range am.areas {
-		areas = append(areas, areaID)
-	}
-	return areas
-}
+	RemoveFromRoom(user.Id, origin.AreaId, origin.Id)
 
-// SaveArea saves an area to file
-func (am *AreaManager) SaveArea(areaID string) error {
-	am.mu.RLock()
-	area, exists := am.areas[areaID]
-	am.mu.RUnlock()
+	user.SetLocation(destination.AreaId, destination.Id)
 
-	if !exists {
-		return fmt.Errorf("area %s not found", areaID)
-	}
-	areaDataPath := getDataPath()
-	filename := filepath.Join(areaDataPath, areaID+".json")
-
-	// Create directory if it doesn't exist
-	if err := os.MkdirAll(areaDataPath, 0755); err != nil {
-		return fmt.Errorf("failed to create directory %s: %w", areaDataPath, err)
-	}
-
-	// Marshal area to JSON with pretty formatting
-	data, err := json.MarshalIndent(area, "", "  ")
-	if err != nil {
-		return fmt.Errorf("failed to marshal area %s: %w", areaID, err)
-	}
-
-	// Write to file
-	if err := os.WriteFile(filename, data, 0644); err != nil {
-		return fmt.Errorf("failed to write area file %s: %w", filename, err)
-	}
+	AddToRoom(user.Id, destination.AreaId, destination.Id)
 
 	return nil
 }
 
-// SaveAllAreas saves all loaded areas to files
-func (am *AreaManager) SaveAllAreas() []error {
-	am.mu.RLock()
-	areaIDs := make([]string, 0, len(am.areas))
-	for areaID := range am.areas {
-		areaIDs = append(areaIDs, areaID)
+func (r *Room) GetPlayers() []uint64 {
+	roomKey := MakeKey(r.AreaId, r.Id)
+	mu.Lock()
+	defer mu.Unlock()
+	if len(roomOccupants[roomKey]) == 0 {
+		return []uint64{}
 	}
-	am.mu.RUnlock()
-
-	var errors []error
-	for _, areaID := range areaIDs {
-		if err := am.SaveArea(areaID); err != nil {
-			errors = append(errors, err)
-		}
-	}
-
-	return errors
+	return roomOccupants[MakeKey(r.AreaId, r.Id)]
 }
 
-func (am *AreaManager) GetRoomCount() int {
-	am.mu.RLock()
-	defer am.mu.RUnlock()
-
-	count := 0
-	for _, area := range am.areas {
-		count += len(area.Rooms)
+// Used to find the direction the person enters from
+func (r *Room) FindExitTo(areaId, roomId string) string {
+	for _, exit := range r.Exits {
+		if exit.Destination == roomId ||
+			exit.Destination == fmt.Sprintf("%s:%s", areaId, roomId) {
+			return string(exit.Direction)
+		}
 	}
-	return count
+
+	return ""
 }
 
-// FormatRoom returns a formatted description of a room for display
-func (am *AreaManager) FormatRoom(areaID, roomID string, tplm *templates.TemplateManager) string {
-	room, exists := am.GetRoom(areaID, roomID)
-	area, aExists := am.GetArea(areaID)
-	if !exists || !aExists {
-		return "You are in an empty void."
-	}
-	data := make(map[string]string)
-	data["Title"] = room.Title
-	data["AreaName"] = area.Name
-	data["Description"] = room.Description
+func (r *Room) ShowRoom(userId uint64) {
+	//command.ShowRoom to user - will need a template manager
+	commands.QueueGameCommand(0, commands.DisplayRoom{
+		UserId:  userId,
+		RoomKey: MakeKey(r.AreaId, r.Id),
+	})
+}
 
-	// Add exits
-	var visibleExits []string
-	for _, exit := range room.Exits {
-		if !exit.Hidden {
-			visibleExits = append(visibleExits, string(exit.Direction))
-		}
-	}
-	var exits string = ""
-	if len(visibleExits) > 0 {
-		var exitText string
-		if len(visibleExits) == 1 {
-			exitText = visibleExits[0]
-		} else if len(visibleExits) == 2 {
-			exitText = strings.Join(visibleExits, ", and ")
-		} else {
-			exitText = strings.Join(visibleExits[:len(visibleExits)-1], ", ") + ", and " + visibleExits[len(visibleExits)-1]
-		}
-		exits += fmt.Sprintf("You see exits to the %s", exitText)
-	} else {
-		exits += "There are no obvious exits."
-	}
+func (r *Room) SendText(message string, toExclude ...uint64) {
+	//command.SendMessage to user
+	commands.QueueGameCommand(0, commands.Message{
+		RoomKey:         MakeKey(r.AreaId, r.Id),
+		ExcludedUserIds: toExclude,
+		Text:            message,
+	})
+}
 
-	data["Exits"] = exits
-
-	output, err := tplm.Process("rooms/default", data)
-	if err != nil {
-		logger.Error("Unable to process template", "t", "rooms/default", "error", err)
+func RemoveFromRoom(userId uint64, areaId, roomId string) {
+	roomKey := MakeKey(areaId, roomId)
+	mu.Lock()
+	if characters, exists := roomOccupants[roomKey]; exists {
+		roomOccupants[roomKey] = slices.DeleteFunc(characters, func(x uint64) bool { return x == userId })
 	}
-	return output
+	mu.Unlock()
+}
+
+func AddToRoom(userId uint64, areaId, roomId string) {
+	destKey := MakeKey(areaId, roomId)
+	mu.Lock()
+	if roomOccupants[destKey] == nil {
+		roomOccupants[destKey] = []uint64{}
+	}
+	roomOccupants[destKey] = append(roomOccupants[destKey], userId)
+	mu.Unlock()
+}
+
+func MakeKey(areaId, roomId string) string {
+	return fmt.Sprintf("%s:%s", areaId, roomId)
+}
+
+func FromKey(roomKey string) (areaId string, roomId string) {
+	parts := SplitDestination(roomKey)
+	if len(parts) == 2 {
+		return parts[0], parts[1]
+	}
+	return "", parts[0]
 }

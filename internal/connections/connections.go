@@ -112,3 +112,7 @@ func (pc *PlayerConnection) GetState() ConnectionState {
 
 	return pc.state
 }
+
+func (pc *PlayerConnection) Send(text string) {
+	pc.Conn.Write([]byte(text + "\n"))
+}
