@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUD 3D Map Visualizer</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 0;
+            background: #000;
+            color: #00ff00;
+            overflow: hidden;
+        }
+
+        .ui-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .ui-panel {
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #555;
+            padding: 15px;
+            margin: 10px;
+            border-radius: 5px;
+            pointer-events: auto;
+            min-width: 200px;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            min-width: 80px;
+            color: #00ffff;
+        }
+
+        select, input[type="range"], button {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 5px;
+            border-radius: 3px;
+        }
+
+        button {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        button:hover {
+            background: #555;
+        }
+
+        .status {
+            color: #ffff00;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .legend {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            pointer-events: auto;
+        }
+
+        .legend h4 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin: 5px 0;
+        }
+
+        .color-box {
+            width: 12px;
+            height: 12px;
+            border: 1px solid #fff;
+        }
+
+        .room-info {
+            position: fixed;
+            top: 50%;
+            right: 10px;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #555;
+            padding: 15px;
+            border-radius: 5px;
+            max-width: 300px;
+            display: none;
+            pointer-events: auto;
+        }
+
+        .room-info h3 {
+            margin: 0 0 10px 0;
+            color: #00ffff;
+        }
+
+        .loading {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 2000;
+        }
+
+        .loading .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #333;
+            border-top: 4px solid #00ff00;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            margin-top: 10px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        input[type="checkbox"] {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Loading 3D MUD Map...</p>
+    </div>
+
+    <div class="ui-overlay">
+        <div class="ui-panel">
+            <div class="status" id="status">Connecting to API...</div>
+            
+            <div class="controls">
+                <div class="control-group">
+                    <label>Area:</label>
+                    <select id="areaSelect">
+                        <option value="">Loading...</option>
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label>Scale:</label>
+                    <input type="range" id="scaleRange" min="0.5" max="3" step="0.1" value="1" />
+                    <span id="scaleValue">1.0x</span>
+                </div>
+                
+                <div class="control-group">
+                    <button onclick="resetCamera()">Reset View</button>
+                    <button onclick="refreshFromAPI()">🔄 Refresh</button>
+                </div>
+
+                <div class="checkbox-group">
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showConnections" checked>
+                        <label for="showConnections">Show Connections</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="showLabels" checked>
+                        <label for="showLabels">Show Labels</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" id="autoRotate">
+                        <label for="autoRotate">Auto Rotate</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="legend">
+        <h4>Legend</h4>
+        <div class="legend-item">
+            <div class="color-box" style="background: #00ff00;"></div>
+            <span>Standard Room</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #ffff00;"></div>
+            <span>Safe Room</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #ff6600;"></div>
+            <span>Starting Room</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #ff0000;"></div>
+            <span>Quarantine Room</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #0088ff;"></div>
+            <span>Standard Exit</span>
+        </div>
+        <div class="legend-item">
+            <div class="color-box" style="background: #ff88ff;"></div>
+            <span>Special Exit</span>
+        </div>
+    </div>
+
+    <div class="room-info" id="roomInfo">
+        <h3 id="roomTitle">Room Info</h3>
+        <div id="roomDetails"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, controls;
+        let areasData = {};
+        let currentArea = null;
+        let roomMeshes = new Map();
+        let connectionLines = new Map();
+        let labelSprites = new Map();
+        let raycaster;
+        let mouse = new THREE.Vector2();
+        let scale = 1.0;
+
+        // Initialize Three.js scene
+        function initThree() {
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x000511);
+
+            // Camera
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            camera.position.set(20, 20, 20);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            document.body.appendChild(renderer.domElement);
+
+            // Raycaster for mouse interaction
+            raycaster = new THREE.Raycaster();
+
+            // Orbit controls (simplified manual implementation)
+            setupCameraControls();
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0x404040, 0.6);
+            scene.add(ambientLight);
+
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(50, 50, 50);
+            directionalLight.castShadow = true;
+            directionalLight.shadow.mapSize.width = 2048;
+            directionalLight.shadow.mapSize.height = 2048;
+            scene.add(directionalLight);
+
+            // Grid helper
+            const gridHelper = new THREE.GridHelper(100, 20, 0x444444, 0x222222);
+            scene.add(gridHelper);
+
+            // Axes helper
+            //const axesHelper = new THREE.AxesHelper(10);
+            //scene.add(axesHelper);
+
+            // Event listeners
+            window.addEventListener('resize', onWindowResize);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('click', onMouseClick);
+
+            animate();
+        }
+
+        function setupCameraControls() {
+            let isMouseDown = false;
+            let mouseX = 0, mouseY = 0;
+            let targetRotationX = 0, targetRotationY = 0;
+            let rotationX = 0, rotationY = 0;
+            let radius = 40;
+
+            renderer.domElement.addEventListener('mousedown', (event) => {
+                isMouseDown = true;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            });
+
+            renderer.domElement.addEventListener('mouseup', () => {
+                isMouseDown = false;
+            });
+
+            renderer.domElement.addEventListener('mousemove', (event) => {
+                if (isMouseDown) {
+                    const deltaX = event.clientX - mouseX;
+                    const deltaY = event.clientY - mouseY;
+                    
+                    targetRotationY += deltaX * 0.01;
+                    targetRotationX += deltaY * 0.01;
+                    targetRotationX = Math.max(-Math.PI/2, Math.min(Math.PI/2, targetRotationX));
+                    
+                    mouseX = event.clientX;
+                    mouseY = event.clientY;
+                }
+            });
+
+            renderer.domElement.addEventListener('wheel', (event) => {
+                radius += event.deltaY * 0.05;
+                radius = Math.max(10, Math.min(100, radius));
+                event.preventDefault();
+            });
+
+            // Update camera position in animation loop
+            window.updateCameraPosition = () => {
+                rotationX += (targetRotationX - rotationX) * 0.1;
+                rotationY += (targetRotationY - rotationY) * 0.1;
+                
+                camera.position.x = radius * Math.cos(rotationY) * Math.cos(rotationX);
+                camera.position.y = radius * Math.sin(rotationX);
+                camera.position.z = radius * Math.sin(rotationY) * Math.cos(rotationX);
+                
+                camera.lookAt(0, 0, 0);
+            };
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (window.updateCameraPosition) {
+                window.updateCameraPosition();
+            }
+
+            // Auto rotate if enabled
+            if (document.getElementById('autoRotate')?.checked) {
+                scene.rotation.y += 0.005;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function onMouseMove(event) {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+
+            // Raycast for hover effects
+            raycaster.setFromCamera(mouse, camera);
+            const roomMeshArray = Array.from(roomMeshes.values());
+            const intersects = raycaster.intersectObjects(roomMeshArray);
+
+            // Reset all room materials
+            roomMeshArray.forEach(mesh => {
+                if (mesh.userData.originalMaterial) {
+                    mesh.material = mesh.userData.originalMaterial;
+                }
+            });
+
+            if (intersects.length > 0) {
+                const intersectedRoom = intersects[0].object;
+                // Highlight hovered room
+                const highlightMaterial = intersectedRoom.material.clone();
+                highlightMaterial.emissive.setHex(0x333333);
+                intersectedRoom.material = highlightMaterial;
+                
+                // Show room info
+                showRoomInfo(intersectedRoom.userData.room);
+            } else {
+                hideRoomInfo();
+            }
+        }
+
+        function onMouseClick(event) {
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(Array.from(roomMeshes.values()));
+
+            if (intersects.length > 0) {
+                const room = intersects[0].object.userData.room;
+                console.log('Clicked room:', room);
+                // Could add additional click functionality here
+            }
+        }
+
+        function showRoomInfo(room) {
+            const roomInfo = document.getElementById('roomInfo');
+            const roomTitle = document.getElementById('roomTitle');
+            const roomDetails = document.getElementById('roomDetails');
+
+            roomTitle.textContent = `Room ${room.Id}: ${room.Title}`;
+            roomDetails.innerHTML = `
+                <p><strong>Type:</strong> ${room.RoomType || 'unknown'}</p>
+                <p><strong>Coordinates:</strong> (${room.Coordinates.X}, ${room.Coordinates.Y}, ${room.Coordinates.Z})</p>
+                <p><strong>Flags:</strong> ${room.RoomFlags ? room.RoomFlags.join(', ') : 'none'}</p>
+                <p><strong>Exits:</strong> ${room.Exits ? room.Exits.map(e => e.Direction).join(", ") : 0}</p>
+                <p><strong>Description:</strong> ${room.Description ? room.Description.substring(0, 150) + '...' : 'No description'}</p>
+            `;
+
+            roomInfo.style.display = 'block';
+        }
+
+        function hideRoomInfo() {
+            document.getElementById('roomInfo').style.display = 'none';
+        }
+
+        async function loadAreasFromAPI() {
+            const status = document.getElementById('status');
+            
+            try {
+                status.textContent = 'Loading areas from API...';
+                status.style.color = '#ffff00';
+                
+                const response = await fetch('/api/areas');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                areasData = await response.json();
+                populateAreaSelect();
+                
+                if (Object.keys(areasData).length > 0) {
+                    status.textContent = `✅ Loaded ${Object.keys(areasData).length} area(s)`;
+                    status.style.color = '#00ff00';
+                    
+                    // Auto-select first area
+                    const firstAreaId = Object.keys(areasData)[0];
+                    document.getElementById('areaSelect').value = firstAreaId;
+                    currentArea = firstAreaId;
+                    render3DMap();
+                } else {
+                    status.textContent = '⚠️ No areas found';
+                    status.style.color = '#ffff00';
+                }
+                
+            } catch (error) {
+                console.error('Failed to load areas:', error);
+                status.textContent = `❌ API Error: ${error.message}`;
+                status.style.color = '#ff0000';
+            }
+        }
+
+        function populateAreaSelect() {
+            const select = document.getElementById('areaSelect');
+            select.innerHTML = '<option value="">Select an area...</option>';
+            
+            for (const [areaId, area] of Object.entries(areasData)) {
+                const option = document.createElement('option');
+                option.value = areaId;
+                option.textContent = area.name || areaId;
+                select.appendChild(option);
+            }
+        }
+
+        function render3DMap() {
+            if (!currentArea || !areasData[currentArea]) return;
+
+            // Clear existing objects
+            clearScene();
+
+            const area = areasData[currentArea];
+            const rooms = Object.values(area.Rooms);
+
+            if (rooms.length === 0) return;
+
+            // Create room meshes
+            rooms.forEach(room => {
+                if (room.Coordinates) {
+                    createRoomMesh(room);
+                }
+            });
+
+            // Create connections
+            if (document.getElementById('showConnections').checked) {
+                rooms.forEach(room => {
+                    if (room.Exits) {
+                        room.Exits.forEach(exit => {
+                            const destRoom = area.Rooms[exit.Destination];
+                            if (destRoom && destRoom.Coordinates) {
+                                createConnection(room, destRoom, exit);
+                            }
+                        });
+                    }
+                });
+            }
+
+            // Create labels
+            if (document.getElementById('showLabels').checked) {
+                rooms.forEach(room => {
+                    if (room.Coordinates) {
+                        createRoomLabel(room);
+                    }
+                });
+            }
+
+            hideLoading();
+        }
+
+        function createRoomMesh(room) {
+            const geometry = new THREE.BoxGeometry(3 * scale, 2 * scale, 3 * scale);
+            
+            // Determine room color
+            let color = 0x00ff00; // default green
+            if (room.RoomFlags) {
+                if (room.RoomFlags.includes('quarantine')) color = 0xff0000;
+                else if (room.RoomFlags.includes('newbie')) color = 0xff6600;
+                else if (room.RoomFlags.includes('safe')) color = 0xffff00;
+            }
+
+            const material = new THREE.MeshLambertMaterial({ color: color });
+            const mesh = new THREE.Mesh(geometry, material);
+
+            // Position using coordinates (scale up for visibility)
+            mesh.position.set(
+                room.Coordinates.X * 8 * scale,
+                room.Coordinates.Z * 4 * scale,  // Z becomes Y (height)
+                room.Coordinates.Y * 8 * scale   // Y becomes Z (depth)
+            );
+
+            mesh.userData = { room: room, originalMaterial: material };
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+
+            scene.add(mesh);
+            roomMeshes.set(room.Id.toString(), mesh);
+        }
+
+        function createConnection(fromRoom, toRoom, exit) {
+            console.log(exit.Direction === 'special')
+            const material = new THREE.LineBasicMaterial({
+                color: exit.Direction === 'special' ? 0xff88ff : 0x0088ff,
+                linewidth: 2
+            });
+
+            const geometry = new THREE.BufferGeometry().setFromPoints([
+                new THREE.Vector3(
+                    fromRoom.Coordinates.X * 8 * scale,
+                    fromRoom.Coordinates.Z * 4 * scale,
+                    fromRoom.Coordinates.Y * 8 * scale
+                ),
+                new THREE.Vector3(
+                    toRoom.Coordinates.X * 8 * scale,
+                    toRoom.Coordinates.Z * 4 * scale,
+                    toRoom.Coordinates.Y * 8 * scale
+                )
+            ]);
+
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            
+            const connectionId = `${fromRoom.Id}-${toRoom.Id}`;
+            connectionLines.set(connectionId, line);
+        }
+
+        function createRoomLabel(room) {
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+            canvas.width = 256;
+            canvas.height = 64;
+
+            context.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+
+            context.fillStyle = '#00ff00';
+            context.font = '16px Courier New';
+            context.textAlign = 'center';
+            context.fillText(room.Id.toString(), canvas.width / 2, 25);
+            context.font = '12px Courier New';
+            context.fillText(room.Title.substring(0, 20), canvas.width / 2, 45);
+
+            const texture = new THREE.CanvasTexture(canvas);
+            const material = new THREE.SpriteMaterial({ map: texture });
+            const sprite = new THREE.Sprite(material);
+
+            sprite.position.set(
+                room.Coordinates.X * 8 * scale,
+                room.Coordinates.Z * 4 * scale + 3,
+                room.Coordinates.Y * 8 * scale
+            );
+            sprite.scale.set(4, 1, 1);
+
+            scene.add(sprite);
+            labelSprites.set(room.Id.toString(), sprite);
+        }
+
+        function clearScene() {
+            // Remove room meshes
+            roomMeshes.forEach(mesh => scene.remove(mesh));
+            roomMeshes.clear();
+
+            // Remove connection lines
+            connectionLines.forEach(line => scene.remove(line));
+            connectionLines.clear();
+
+            // Remove labels
+            labelSprites.forEach(sprite => scene.remove(sprite));
+            labelSprites.clear();
+        }
+
+        function resetCamera() {
+            camera.position.set(20, 20, 20);
+            camera.lookAt(0, 0, 0);
+        }
+
+        function refreshFromAPI() {
+            showLoading();
+            loadAreasFromAPI();
+        }
+
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        // Event listeners
+        document.getElementById('areaSelect').addEventListener('change', function() {
+            currentArea = this.value;
+            if (currentArea) {
+                showLoading();
+                setTimeout(() => render3DMap(), 100);
+            }
+        });
+
+        document.getElementById('scaleRange').addEventListener('input', function() {
+            scale = parseFloat(this.value);
+            document.getElementById('scaleValue').textContent = scale.toFixed(1) + 'x';
+            if (currentArea) {
+                render3DMap();
+            }
+        });
+
+        document.getElementById('showConnections').addEventListener('change', function() {
+            if (currentArea) render3DMap();
+        });
+
+        document.getElementById('showLabels').addEventListener('change', function() {
+            if (currentArea) render3DMap();
+        });
+
+        // Initialize everything
+        window.addEventListener('load', () => {
+            initThree();
+            loadAreasFromAPI();
+        });
+    </script>
+</body>
+</html>

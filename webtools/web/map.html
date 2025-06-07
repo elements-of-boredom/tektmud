@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MUD Map Viewer</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #00ff00;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #00ffff;
+            text-shadow: 0 0 10px #00ffff;
+        }
+        
+        .controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .controls label {
+            margin-right: 10px;
+        }
+        
+        .controls select {
+            background: #333;
+            color: #00ff00;
+            border: 1px solid #555;
+            padding: 5px;
+            margin-right: 20px;
+        }
+        
+        .map-container {
+            border: 2px solid #555;
+            background: #222;
+            margin: 20px 0;
+            overflow: auto;
+            max-height: 800px;
+        }
+        
+        canvas {
+            display: block;
+            background: #111;
+        }
+        
+        .room-info {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+            max-width: 300px;
+            z-index: 1000;
+            color: #00ff00;
+        }
+        
+        .legend {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #555;
+            background: #222;
+        }
+        
+        .legend h3 {
+            margin-top: 0;
+            color: #00ffff;
+        }
+        
+        .upload-area {
+            border: 2px dashed #555;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+        }
+        
+        .upload-area:hover {
+            border-color: #00ff00;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 MUD Map Viewer</h1>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <p>Loading from API...</p>
+            <p>If API fails, click here to upload JSON file manually</p>
+            <input type="file" id="fileInput" accept=".json" />
+        </div>
+        
+        <div class="controls">
+            <label for="areaSelect">Area:</label>
+            <select id="areaSelect">
+                <option value="">Loading areas...</option>
+            </select>
+            
+            <label for="zLevelSelect">Z Level:</label>
+            <select id="zLevelSelect">
+                <option value="0">Z: 0</option>
+            </select>
+            
+            <label for="scaleRange">Scale:</label>
+            <input type="range" id="scaleRange" min="0.5" max="3" step="0.1" value="1" />
+            <span id="scaleValue">1.0x</span>
+            
+            <button onclick="refreshFromAPI()" style="margin-left: 20px; background: #333; color: #00ff00; border: 1px solid #555; padding: 5px 10px; cursor: pointer;">🔄 Refresh</button>
+        </div>
+        
+        <div class="map-container">
+            <canvas id="mapCanvas" width="1000" height="600"></canvas>
+        </div>
+        
+        <div class="room-info" id="roomInfo"></div>
+        
+        <div class="legend">
+            <h3>Legend</h3>
+            <p><span style="color: #00ff00;">█</span> Standard Room</p>
+            <p><span style="color: #ffff00;">█</span> Safe Room</p>
+            <p><span style="color: #ff6600;">█</span> Newbie Room</p>
+            <p><span style="color: #ff0000;">█</span> Quarantine Room</p>
+            <p><span style="color: #0088ff;">▬</span> Standard Exit</p>
+            <p><span style="color: #ff88ff;">▬</span> Special Exit</p>
+            <p><span style="color: #888888;">▬</span> Vertical Exit (up/down)</p>
+        </div>
+    </div>
+
+    <script>
+        let areasData = {};
+        let currentArea = null;
+        let currentZLevel = 0;
+        let scale = 1.0;
+        
+        const canvas = document.getElementById('mapCanvas');
+        const ctx = canvas.getContext('2d');
+        const roomInfo = document.getElementById('roomInfo');
+        
+        // Load data from API on page load
+        loadAreasFromAPI();
+        
+        
+        async function loadAreasFromAPI() {
+            const statusDiv = document.querySelector('.upload-area p:first-child');
+            
+            try {
+                statusDiv.textContent = 'Loading areas from API...';
+                
+                const response = await fetch('/api/areas');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                areasData = await response.json();
+                populateAreaSelect();
+                
+                if (Object.keys(areasData).length > 0) {
+                    statusDiv.textContent = `✅ Loaded ${Object.keys(areasData).length} area(s) from API`;
+                    statusDiv.style.color = '#00ff00';
+                    
+                    // Auto-select first area if available
+                    const firstAreaId = Object.keys(areasData)[0];
+                    document.getElementById('areaSelect').value = firstAreaId;
+                    currentArea = firstAreaId;
+                    populateZLevelSelect();
+                    drawMap();
+                } else {
+                    statusDiv.textContent = '⚠️ No areas found in API response';
+                    statusDiv.style.color = '#ffff00';
+                }
+                
+            } catch (error) {
+                console.error('Failed to load areas from API:', error);
+                statusDiv.textContent = `❌ Failed to load from API: ${error.message}`;
+                statusDiv.style.color = '#ff0000';
+                
+                // Show upload option as fallback
+                const uploadText = document.querySelector('.upload-area p:last-child');
+                uploadText.textContent = 'API unavailable - Click here to upload JSON file instead';
+                uploadText.style.color = '#ffff00';
+            }
+        }
+        
+        function refreshFromAPI() {
+            loadAreasFromAPI();
+        }
+        // File upload handler (fallback if API fails)
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        areasData = JSON.parse(e.target.result);
+                        populateAreaSelect();
+                        
+                        const statusDiv = document.querySelector('.upload-area p:first-child');
+                        statusDiv.textContent = `✅ Loaded ${Object.keys(areasData).length} area(s) from file`;
+                        statusDiv.style.color = '#00ff00';
+                        
+                        // Auto-select first area
+                        const firstAreaId = Object.keys(areasData)[0];
+                        if (firstAreaId) {
+                            document.getElementById('areaSelect').value = firstAreaId;
+                            currentArea = firstAreaId;
+                            populateZLevelSelect();
+                            drawMap();
+                        }
+                    } catch (error) {
+                        const statusDiv = document.querySelector('.upload-area p:first-child');
+                        statusDiv.textContent = `❌ Error parsing JSON: ${error.message}`;
+                        statusDiv.style.color = '#ff0000';
+                    }
+                };
+                reader.readAsText(file);
+            }
+        });
+        
+        // Controls
+        document.getElementById('areaSelect').addEventListener('change', function() {
+            currentArea = this.value;
+            if (currentArea && areasData[currentArea]) {
+                populateZLevelSelect();
+                drawMap();
+            }
+        });
+        
+        document.getElementById('zLevelSelect').addEventListener('change', function() {
+            currentZLevel = parseInt(this.value);
+            drawMap();
+        });
+        
+        document.getElementById('scaleRange').addEventListener('input', function() {
+            scale = parseFloat(this.value);
+            document.getElementById('scaleValue').textContent = scale.toFixed(1) + 'x';
+            drawMap();
+        });
+        
+        // Canvas mouse events
+        canvas.addEventListener('mousemove', function(e) {
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.clientX - rect.left) / scale;
+            const y = (e.clientY - rect.top) / scale;
+            
+            const room = getRoomAtPosition(x, y);
+            if (room) {
+                showRoomInfo(room, e.clientX, e.clientY);
+            } else {
+                hideRoomInfo();
+            }
+        });
+        
+        canvas.addEventListener('mouseleave', function() {
+            hideRoomInfo();
+        });
+        
+        function populateAreaSelect() {
+            const select = document.getElementById('areaSelect');
+            select.innerHTML = '<option value="">Select an area...</option>';
+            
+            for (const [areaId, area] of Object.entries(areasData)) {
+                const option = document.createElement('option');
+                option.value = areaId;
+                option.textContent = area.name || areaId;
+                select.appendChild(option);
+            }
+        }
+        
+        function populateZLevelSelect() {
+            if (!currentArea || !areasData[currentArea]) return;
+            
+            const zLevels = new Set();
+            const rooms = areasData[currentArea].Rooms;
+            
+            for (const room of Object.values(rooms)) {
+                if (room.Coordinates) {
+                    zLevels.add(room.Coordinates.Z);
+                }
+            }
+            
+            const select = document.getElementById('zLevelSelect');
+            select.innerHTML = '';
+            
+            Array.from(zLevels).sort((a, b) => a - b).forEach(z => {
+                const option = document.createElement('option');
+                option.value = z;
+                option.textContent = `Z: ${z}`;
+                select.appendChild(option);
+            });
+            
+            currentZLevel = Math.min(...zLevels);
+        }
+        
+        function drawMap() {
+            if (!currentArea || !areasData[currentArea]) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.save();
+            ctx.scale(scale, scale);
+            
+            const area = areasData[currentArea];
+            const rooms = area.Rooms;
+            
+            // Filter rooms by current Z level
+            const currentLevelRooms = Object.values(rooms).filter(room => 
+                room.Coordinates && room.Coordinates.Z === currentZLevel
+            );
+            
+            if (currentLevelRooms.length === 0) {
+                ctx.restore();
+                return;
+            }
+            
+            // Calculate bounds and center the map
+            const bounds = calculateBounds(currentLevelRooms);
+            const offsetX = (canvas.width / scale - (bounds.maxX - bounds.minX) * 80) / 2 - bounds.minX * 80;
+            const offsetY = (canvas.height / scale - (bounds.maxY - bounds.minY) * 80) / 2 - bounds.minY * 80;
+            
+            ctx.translate(offsetX, offsetY);
+            
+            // Draw connections first (so they appear behind rooms)
+            currentLevelRooms.forEach(room => {
+                drawConnections(room, rooms, offsetX, offsetY);
+            });
+            
+            // Draw rooms
+            currentLevelRooms.forEach(room => {
+                drawRoom(room);
+            });
+            
+            ctx.restore();
+        }
+        
+        function calculateBounds(rooms) {
+            const coords = rooms.map(room => room.Coordinates);
+            return {
+                minX: Math.min(...coords.map(c => c.X)),
+                maxX: Math.max(...coords.map(c => c.X)),
+                minY: Math.min(...coords.map(c => c.Y)),
+                maxY: Math.max(...coords.map(c => c.Y))
+            };
+        }
+        
+        function drawRoom(room) {
+            const x = room.Coordinates.X * 80;
+            const y = room.Coordinates.Y * 80;
+            const width = 70;
+            const height = 50;
+            
+            // Determine room color based on flags
+            let color = '#00ff00'; // default green
+            if (room.room_flags) {
+                if (room.room_flags.includes('quarantine')) color = '#ff0000';
+                else if (room.room_flags.includes('newbie')) color = '#ff6600';
+                else if (room.room_flags.includes('safe')) color = '#ffff00';
+            }
+            
+            // Draw room rectangle
+            ctx.fillStyle = color;
+            ctx.fillRect(x, y, width, height);
+            
+            // Draw room border
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, width, height);
+            
+            // Draw room ID
+            ctx.fillStyle = '#000000';
+            ctx.font = '12px Courier New';
+            ctx.textAlign = 'center';
+            ctx.fillText(room.Id.toString(), x + width/2, y + height/2 - 5);
+            
+            // Draw room title (truncated)
+            ctx.font = '8px Courier New';
+            const title = room.Title.length > 12 ? room.Title.substring(0, 12) + '...' : room.Title;
+            ctx.fillText(title, x + width/2, y + height/2 + 8);
+        }
+        
+        function drawConnections(room, allRooms, offsetX, offsetY) {
+            if (!room.Exits) return;
+            
+            const roomX = room.Coordinates.X * 80 + 35;
+            const roomY = room.Coordinates.Y * 80 + 25;
+            
+            room.Exits.forEach(exit => {
+                const destRoom = allRooms[exit.Destination];
+                if (!destRoom || !destRoom.Coordinates) return;
+                
+                // Skip connections to different Z levels for clarity
+                if (destRoom.Coordinates.Z !== currentZLevel) {
+                    // Draw indicator for vertical connections
+                    ctx.fillStyle = '#888888';
+                    ctx.font = '10px Courier New';
+                    ctx.textAlign = 'center';
+                    const symbol = exit.Direction === 'up' ? '↑' : exit.Direction === 'down' ? '↓' : '↕';
+                    ctx.fillText(symbol, roomX, roomY - 15);
+                    return;
+                }
+                
+                const destX = destRoom.Coordinates.X * 80 + 35;
+                const destY = destRoom.Coordinates.Y * 80 + 25;
+                
+                // Determine line color
+                let lineColor = '#0088ff'; // standard
+                if (exit.Direction === 'special') lineColor = '#ff88ff';
+                else if (exit.Direction === 'up' || exit.Direction === 'down') lineColor = '#888888';
+                
+                // Draw connection line
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(roomX, roomY);
+                ctx.lineTo(destX, destY);
+                ctx.stroke();
+                
+                // Draw direction arrow
+                drawArrow(roomX, roomY, destX, destY, lineColor);
+            });
+        }
+        
+        function drawArrow(fromX, fromY, toX, toY, color) {
+            const angle = Math.atan2(toY - fromY, toX - fromX);
+            const arrowLength = 10;
+            const arrowAngle = Math.PI / 6;
+            
+            // Position arrow at 80% along the line
+            const progress = 0.8;
+            const arrowX = fromX + (toX - fromX) * progress;
+            const arrowY = fromY + (toY - fromY) * progress;
+            
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(
+                arrowX - arrowLength * Math.cos(angle - arrowAngle),
+                arrowY - arrowLength * Math.sin(angle - arrowAngle)
+            );
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(
+                arrowX - arrowLength * Math.cos(angle + arrowAngle),
+                arrowY - arrowLength * Math.sin(angle + arrowAngle)
+            );
+            ctx.stroke();
+        }
+        
+        function getRoomAtPosition(x, y) {
+            if (!currentArea || !areasData[currentArea]) return null;
+            
+            const area = areasData[currentArea];
+            const rooms = Object.values(area.Rooms).filter(room => 
+                room.Coordinates && room.Coordinates.Z === currentZLevel
+            );
+            
+            const bounds = calculateBounds(rooms);
+            const offsetX = (canvas.width / scale - (bounds.maxX - bounds.minX) * 80) / 2 - bounds.minX * 80;
+            const offsetY = (canvas.height / scale - (bounds.maxY - bounds.minY) * 80) / 2 - bounds.minY * 80;
+            
+            for (const room of rooms) {
+                const roomX = room.Coordinates.X * 80 + offsetX;
+                const roomY = room.Coordinates.Y * 80 + offsetY;
+                const width = 70;
+                const height = 50;
+                
+                if (x >= roomX && x <= roomX + width && y >= roomY && y <= roomY + height) {
+                    return room;
+                }
+            }
+            return null;
+        }
+        
+        function showRoomInfo(room, mouseX, mouseY) {
+            const info = `
+                <strong>Room ${room.Id}: ${room.Title}</strong><br>
+                Type: ${room.room_type || 'unknown'}<br>
+                Coordinates: (${room.Coordinates.X}, ${room.Coordinates.Y}, ${room.Coordinates.Z})<br>
+                Flags: ${room.RoomFlags ? room.RoomFlags.join(', ') : 'none'}<br>
+                Exits: ${room.Exits ? room.Exits.map(e => e.Direction).join(", ") : 0}<br>
+                <em>${room.Description ? room.Description.substring(0, 100) + '...' : ''}</em>
+            `;
+            
+            roomInfo.innerHTML = info;
+            roomInfo.style.display = 'block';
+            roomInfo.style.left = (mouseX + 10) + 'px';
+            roomInfo.style.top = (mouseY + 10) + 'px';
+        }
+        
+        function hideRoomInfo() {
+            roomInfo.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

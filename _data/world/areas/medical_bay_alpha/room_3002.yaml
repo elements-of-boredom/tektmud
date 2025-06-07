@@ -24,6 +24,9 @@ exits:
   - direction: "north"
     destination: "3005"
     hidden: false
+  - direction: "northeast"
+    destination: "3011"
+    hidden: false
 
 room_type: "indoor"
 light_level: "normal"

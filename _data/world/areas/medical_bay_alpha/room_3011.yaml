@@ -1,5 +1,5 @@
-id: 3010
-title: "Medical Archives"
+id: 3011
+title: "Medical Library"
 description: |
   Towering data storage units line the walls of this repository, containing 
   medical records and research data from across the galaxy. Holographic 
@@ -9,12 +9,12 @@ description: |
 
 coordinates:
   x: 1
-  y: 4
-  z: 1
+  y: 0
+  z: 0
 
 exits:
-  - direction: "south"
-    destination: "3009"
+  - direction: "southwest"
+    destination: "3002"
     hidden: false
 
 room_type: "indoor"

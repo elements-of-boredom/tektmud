@@ -1,0 +1,658 @@
+{
+  "medical_bay_alpha": {
+    "Id": "medical_bay_alpha",
+    "Name": "Medical Bay Alpha",
+    "Description": "A sterile medical facility aboard the research station, featuring advanced cloning technology and rehabilitation chambers.",
+    "Rooms": {
+      "3001": {
+        "Id": "3001",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Cloning Chambers",
+        "Description": "You find yourself in a pristine white chamber filled with rows of cylindrical \ncloning tubes. Each tube glows with a soft blue light, containing swirling \nbio-fluid. Neural interface cables snake across the ceiling like mechanical \nvines. A gentle hum fills the air from the life support systems. To the north, \nan airlock leads to the main corridor.\n",
+        "Coordinates": {
+          "X": 0,
+          "Y": 0,
+          "Z": 0
+        },
+        "Exits": [
+          {
+            "Direction": "north",
+            "Destination": "3002",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "bright",
+        "Items": [
+          {
+            "Id": "cloning_tube",
+            "Quantity": 6,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "medical_gown",
+            "Quantity": 1,
+            "Respawn": null,
+            "ResetTimer": 300
+          },
+          {
+            "Id": "neural_interface",
+            "Quantity": 3,
+            "Respawn": false,
+            "ResetTimer": null
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "medical_droid",
+            "Quantity": 1,
+            "ResetTimer": 1800
+          }
+        ],
+        "RoomFlags": [
+          "safe",
+          "no_summon",
+          "newbie"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3002": {
+        "Id": "3002",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Main Medical Corridor",
+        "Description": "A wide corridor stretches east and west, with polished metal walls bearing \nthe insignia of the Galactic Medical Corps. Soft lighting panels illuminate \nthe path, while air recyclers hum quietly overhead. To the south lies the \ncloning chambers, while passages lead to various medical facilities.\n",
+        "Coordinates": {
+          "X": 0,
+          "Y": 1,
+          "Z": 0
+        },
+        "Exits": [
+          {
+            "Direction": "south",
+            "Destination": "3001",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "east",
+            "Destination": "3003",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "west",
+            "Destination": "3004",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "north",
+            "Destination": "3005",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "northeast",
+            "Destination": "3011",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "normal",
+        "Items": [
+          {
+            "Id": "wall_panel",
+            "Quantity": 4,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "medical_kit",
+            "Quantity": 1,
+            "Respawn": null,
+            "ResetTimer": 600
+          }
+        ],
+        "NPCs": [],
+        "RoomFlags": [
+          "safe"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3003": {
+        "Id": "3003",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Equipment Storage",
+        "Description": "This compact storage room contains shelves lined with medical equipment and \nsupplies. Surgical instruments gleam under the overhead lights, while \nvarious pharmaceuticals are secured in climate-controlled containers. \nA workbench along one wall holds diagnostic tools.\n",
+        "Coordinates": {
+          "X": 1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Exits": [
+          {
+            "Direction": "west",
+            "Destination": "3002",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "normal",
+        "Items": [
+          {
+            "Id": "surgical_tools",
+            "Quantity": 1,
+            "Respawn": null,
+            "ResetTimer": 1200
+          },
+          {
+            "Id": "bandages",
+            "Quantity": 5,
+            "Respawn": null,
+            "ResetTimer": 300
+          },
+          {
+            "Id": "stim_pack",
+            "Quantity": 3,
+            "Respawn": null,
+            "ResetTimer": 900
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "supply_officer",
+            "Quantity": 1,
+            "ResetTimer": 3600
+          }
+        ],
+        "RoomFlags": [
+          "safe"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3004": {
+        "Id": "3004",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Recovery Ward",
+        "Description": "Several bio-beds line the walls of this quiet recovery area. Each bed is \nequipped with vital sign monitors and life support connections. The lighting \nis dimmed to promote rest, and the air carries a faint scent of medical \nantiseptic. A stairwell leads up to the observation deck.\n",
+        "Coordinates": {
+          "X": -1,
+          "Y": 1,
+          "Z": 0
+        },
+        "Exits": [
+          {
+            "Direction": "east",
+            "Destination": "3002",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "up",
+            "Destination": "3006",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "dim",
+        "Items": [
+          {
+            "Id": "bio_bed",
+            "Quantity": 4,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "medical_scanner",
+            "Quantity": 2,
+            "Respawn": false,
+            "ResetTimer": null
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "nurse_droid",
+            "Quantity": 1,
+            "ResetTimer": 2400
+          }
+        ],
+        "RoomFlags": [
+          "safe",
+          "quiet"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3005": {
+        "Id": "3005",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Quarantine Airlock",
+        "Description": "You stand in a sterile decontamination chamber with gleaming metal walls. \nRed warning lights indicate the quarantine protocols are active. Nozzles \nin the ceiling can spray disinfectant mist when needed. A sealed door to \nthe north leads into the quarantine bay.\n",
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 0
+        },
+        "Exits": [
+          {
+            "Direction": "south",
+            "Destination": "3002",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "in",
+            "Destination": "3007",
+            "Hidden": false,
+            "Description": "A heavy sealed door marked with biohazard warnings",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "bright",
+        "Items": [
+          {
+            "Id": "decon_spray",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "hazmat_suit",
+            "Quantity": 2,
+            "Respawn": null,
+            "ResetTimer": 1800
+          }
+        ],
+        "NPCs": [],
+        "RoomFlags": [
+          "safe",
+          "decontamination"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3006": {
+        "Id": "3006",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Observation Deck",
+        "Description": "This elevated platform provides a clear view of the medical bay below through \nreinforced transparent aluminum windows. Control panels and monitoring \nequipment allow oversight of all medical operations. The stars are visible \nthrough a large viewport on the far wall.\n",
+        "Coordinates": {
+          "X": -1,
+          "Y": 1,
+          "Z": 2
+        },
+        "Exits": [
+          {
+            "Direction": "down",
+            "Destination": "3004",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "normal",
+        "Items": [
+          {
+            "Id": "control_panel",
+            "Quantity": 3,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "monitoring_station",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "star_chart",
+            "Quantity": 1,
+            "Respawn": null,
+            "ResetTimer": 7200
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "medical_officer",
+            "Quantity": 1,
+            "ResetTimer": 3600
+          }
+        ],
+        "RoomFlags": [
+          "safe"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3007": {
+        "Id": "3007",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Quarantine Laboratory",
+        "Description": "Behind the sealed door lies a high-security laboratory for containing and \nstudying dangerous pathogens. The room is kept under negative pressure, \nwith multiple layers of containment. Research equipment lines the walls, \nand a small chamber provides additional isolation space.\n",
+        "Coordinates": {
+          "X": 0,
+          "Y": 2,
+          "Z": 1
+        },
+        "Exits": [
+          {
+            "Direction": "out",
+            "Destination": "3005",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "special",
+            "Destination": "3008",
+            "Hidden": true,
+            "Description": "A small sealed isolation chamber",
+            "Keywords": [
+              "enter"
+            ]
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "bright",
+        "Items": [
+          {
+            "Id": "research_equipment",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "pathogen_sample",
+            "Quantity": 3,
+            "Respawn": null,
+            "ResetTimer": 3600
+          },
+          {
+            "Id": "containment_unit",
+            "Quantity": 2,
+            "Respawn": false,
+            "ResetTimer": null
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "xenobiologist",
+            "Quantity": 1,
+            "ResetTimer": 5400
+          }
+        ],
+        "RoomFlags": [
+          "safe",
+          "quarantine"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3008": {
+        "Id": "3008",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Isolation Chamber",
+        "Description": "This small, sealed chamber is designed for maximum containment of dangerous \nspecimens. The walls are lined with energy barriers, and the air is \ncompletely recycled through multiple filtration systems. It feels cramped \nand oppressive, with only basic life support systems active.\n",
+        "Coordinates": {
+          "X": 1,
+          "Y": 2,
+          "Z": 1
+        },
+        "Exits": [
+          {
+            "Direction": "out",
+            "Destination": "3007",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "north",
+            "Destination": "3009",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "dim",
+        "Items": [
+          {
+            "Id": "containment_field",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "specimen_container",
+            "Quantity": 2,
+            "Respawn": null,
+            "ResetTimer": 7200
+          }
+        ],
+        "NPCs": [],
+        "RoomFlags": [
+          "safe",
+          "contained",
+          "cramped"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3009": {
+        "Id": "3009",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Advanced Surgical Suite",
+        "Description": "This state-of-the-art operating theater features robotic surgical arms \nsuspended from the ceiling and a central surgical table surrounded by \nholographic displays. The room maintains perfect sterility through \natmospheric processors. Emergency medical supplies are readily accessible.\n",
+        "Coordinates": {
+          "X": 1,
+          "Y": 3,
+          "Z": 1
+        },
+        "Exits": [
+          {
+            "Direction": "south",
+            "Destination": "3008",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          },
+          {
+            "Direction": "north",
+            "Destination": "3010",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "bright",
+        "Items": [
+          {
+            "Id": "surgical_table",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "robotic_arm",
+            "Quantity": 4,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "holographic_display",
+            "Quantity": 6,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "emergency_supplies",
+            "Quantity": 1,
+            "Respawn": null,
+            "ResetTimer": 1800
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "surgical_droid",
+            "Quantity": 2,
+            "ResetTimer": 7200
+          }
+        ],
+        "RoomFlags": [
+          "safe",
+          "sterile"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3010": {
+        "Id": "3010",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Medical Archives",
+        "Description": "Towering data storage units line the walls of this repository, containing \nmedical records and research data from across the galaxy. Holographic \ninterfaces float at various workstations, allowing researchers to access \nvast databases of medical knowledge. The gentle hum of cooling systems \nkeeps the servers at optimal temperature.\n",
+        "Coordinates": {
+          "X": 1,
+          "Y": 4,
+          "Z": 1
+        },
+        "Exits": [
+          {
+            "Direction": "south",
+            "Destination": "3009",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "normal",
+        "Items": [
+          {
+            "Id": "data_terminal",
+            "Quantity": 4,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "medical_database",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "research_notes",
+            "Quantity": 8,
+            "Respawn": null,
+            "ResetTimer": 3600
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "archivist_droid",
+            "Quantity": 1,
+            "ResetTimer": 10800
+          }
+        ],
+        "RoomFlags": [
+          "safe",
+          "quiet"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      },
+      "3011": {
+        "Id": "3011",
+        "AreaId": "medical_bay_alpha",
+        "Title": "Medical Library",
+        "Description": "Towering data storage units line the walls of this repository, containing \nmedical records and research data from across the galaxy. Holographic \ninterfaces float at various workstations, allowing researchers to access \nvast databases of medical knowledge. The gentle hum of cooling systems \nkeeps the servers at optimal temperature.\n",
+        "Coordinates": {
+          "X": 1,
+          "Y": 0,
+          "Z": 0
+        },
+        "Exits": [
+          {
+            "Direction": "southwest",
+            "Destination": "3002",
+            "Hidden": false,
+            "Description": "",
+            "Keywords": null
+          }
+        ],
+        "RoomType": "indoor",
+        "LightLevel": "normal",
+        "Items": [
+          {
+            "Id": "data_terminal",
+            "Quantity": 4,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "medical_database",
+            "Quantity": 1,
+            "Respawn": false,
+            "ResetTimer": null
+          },
+          {
+            "Id": "research_notes",
+            "Quantity": 8,
+            "Respawn": null,
+            "ResetTimer": 3600
+          }
+        ],
+        "NPCs": [
+          {
+            "Id": "archivist_droid",
+            "Quantity": 1,
+            "ResetTimer": 10800
+          }
+        ],
+        "RoomFlags": [
+          "safe",
+          "quiet"
+        ],
+        "Scripts": [],
+        "Triggers": [],
+        "Properties": null
+      }
+    },
+    "Properties": {
+      "difficulty": "newbie",
+      "max_level": "10",
+      "zone_type": "safe"
+    }
+  }
+}

@@ -36,7 +36,7 @@ func getDataPath() string {
 }
 
 // Loads all areas at a known path
-func (am *AreaManager) LoadAreas(worldPath string) (map[string]*Area, error) {
+func LoadAreas(worldPath string) (map[string]*Area, error) {
 	areas := make(map[string]*Area)
 
 	//read the areas.yaml file
@@ -63,7 +63,7 @@ func (am *AreaManager) LoadAreas(worldPath string) (map[string]*Area, error) {
 
 		//Load the rooms for the area
 		areaPath := filepath.Join(worldPath, "areas", areaDef.Path)
-		rooms, err := am.loadRoomsForArea(area.Id, areaPath)
+		rooms, err := loadRoomsForArea(area.Id, areaPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load rooms for area %s: %w", areaDef.Id, err)
 		}
@@ -75,7 +75,7 @@ func (am *AreaManager) LoadAreas(worldPath string) (map[string]*Area, error) {
 	return areas, nil
 }
 
-func (am *AreaManager) loadRoomsForArea(areaId, areaPath string) (map[string]*Room, error) {
+func loadRoomsForArea(areaId, areaPath string) (map[string]*Room, error) {
 	rooms := make(map[string]*Room)
 
 	// Check if area directory exists
@@ -123,7 +123,7 @@ func (am *AreaManager) loadRoomsForArea(areaId, areaPath string) (map[string]*Ro
 }
 
 func Initialize() (am *AreaManager, err error) {
-	loadedAreas, err := areaManager.LoadAreas(getDataPath())
+	loadedAreas, err := LoadAreas(getDataPath())
 	if err != nil {
 		return nil, fmt.Errorf("failed to load areas: %w", err)
 	}
@@ -132,6 +132,13 @@ func Initialize() (am *AreaManager, err error) {
 	//Validate the room connections
 	if errors := areaManager.ValidateRoomConnections(); len(errors) > 0 {
 		logger.Warn("Warning: Found rooms with connection errors:", "count", len(errors))
+		for _, err := range errors {
+			logger.Printf(" - %v", err)
+		}
+	}
+	//Validate the room connections
+	if errors := areaManager.ValidateRoomCoordinates(); len(errors) > 0 {
+		logger.Warn("Warning: Found rooms with coordinate errors:", "count", len(errors))
 		for _, err := range errors {
 			logger.Printf(" - %v", err)
 		}
@@ -200,6 +207,30 @@ func (am *AreaManager) FindExitByKeyword(areaID, roomID, keyword string) (*Exit,
 	}
 
 	return nil, false
+}
+
+func (am *AreaManager) ValidateRoomCoordinates() []error {
+	am.mu.RLock()
+	defer am.mu.RUnlock()
+
+	var errors []error
+	var seen map[string]string = make(map[string]string)
+
+	for areaID, area := range am.areas {
+		for roomID, room := range area.Rooms {
+			coords := fmt.Sprintf("%d:%d:%d", room.Coordinates.X, room.Coordinates.Y, room.Coordinates.Z)
+			if roomkey, exists := seen[coords]; !exists {
+				seen[coords] = MakeKey(room.AreaId, room.Id)
+			} else {
+				errors = append(errors, fmt.Errorf(
+					"room %s:%s has coordinates that already existed on %s",
+					areaID, roomID, roomkey,
+				))
+			}
+		}
+	}
+
+	return errors
 }
 
 // ValidateRoomConnections checks that all room exits point to valid destinations
