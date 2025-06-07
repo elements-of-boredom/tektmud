@@ -7,7 +7,7 @@ import (
 	"tektmud/internal/users"
 )
 
-func Move(args []string, user *users.UserRecord, room *rooms.Room) (bool, error) {
+func Move(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
 
 	if len(args) == 0 {
 		return false, fmt.Errorf("received a move command with no direction user:%v, room:%v", user.Id, room.Id)
@@ -18,7 +18,7 @@ func Move(args []string, user *users.UserRecord, room *rooms.Room) (bool, error)
 		return true, nil
 	}
 
-	if exit := room.FindExit(args[0]); exit != nil {
+	if exit := room.FindExit(args); exit != nil {
 		areaId, roomId := user.Char.GetLocation()
 
 		//Parse the target destination

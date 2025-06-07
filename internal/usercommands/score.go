@@ -9,9 +9,9 @@ import (
 	"tektmud/internal/users"
 )
 
-func Score(args []string, user *users.UserRecord, room *rooms.Room) (bool, error) {
+func Score(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
 	var template string = "playerinfo/score"
-	if len(args) > 0 && strings.HasPrefix(strings.ToLower(args[0]), "full") {
+	if len(args) > 0 && strings.HasPrefix(strings.ToLower(args), "full") {
 		template = "playerinfo/score.full"
 	}
 

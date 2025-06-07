@@ -43,10 +43,8 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 	handled := false
 
 	if len(input.Text) > 0 {
-		//before all else check to see if this is movement.
-		//simplest way to do this is see if the input is a known room exit.
 
-		parts := strings.Fields((strings.TrimSpace(input.Text)))
+		parts := strings.SplitN(input.Text, " ", 2)
 
 		room, exists := il.areaManager.GetRoom(user.Char.AreaId, user.Char.RoomId)
 		if !exists {
@@ -55,32 +53,35 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 		}
 
 		var cmd string = ""
-		var args []string = make([]string, max(len(parts)-1, 1))
+
 		if len(parts) > 0 {
 			cmd = parts[0]
-			args = parts[1:]
 		}
 
+		//before all else check to see if this is movement.
+		//simplest way to do this is see if the input is a known room exit.
 		isExit := room.IsExitCommand(cmd)
 		if isExit {
 			//This is a movement command
-			args[0] = cmd
 			cmd = `move`
 		}
 
 		cmdHandler, ok := usercommands.UserHandlers[cmd]
 		if ok {
+
+			arguments := strings.Replace(input.Text, fmt.Sprintf("%s ", cmd), "", 1)
+
 			//If this is an admin command and they aren't an admin just act like we dont
 			//know this command exists.
 			if cmdHandler.IsAdminCommand && !user.HasRole(users.RoleAdmin) {
-				logger.Warn("User attempted admin command but is not an Admin", "userId", user.Id, "cmd", cmd, "args", fmt.Sprintf("[%s]", strings.Join(args, " ")))
+				logger.Warn("User attempted admin command but is not an Admin", "userId", user.Id, "cmd", cmd, "args", fmt.Sprintf("[%s]", arguments))
 				//TODO do we tell the user we failed here?
 				return commands.Continue
 			}
 			//Otherwise run the command
-			handled, err = cmdHandler.Func(args, user, room)
+			handled, err = cmdHandler.Func(arguments, user, room)
 			if err != nil {
-				logger.Error("CmdHandler.Func", "err", err, "cmd", cmd, "args", "args", fmt.Sprintf("[%s]", strings.Join(args, " ")))
+				logger.Error("CmdHandler.Func", "err", err, "cmd", cmd, "args", "args", fmt.Sprintf("[%s]", arguments))
 			}
 		}
 

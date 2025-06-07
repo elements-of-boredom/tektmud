@@ -6,7 +6,7 @@ import (
 	"tektmud/internal/users"
 )
 
-func Quit(args []string, user *users.UserRecord, room *rooms.Room) (bool, error) {
+func Quit(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
 
 	//TODO
 	//Want to show 2-3 messages before they can quit.

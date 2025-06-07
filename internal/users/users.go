@@ -30,12 +30,16 @@ type HashSalt struct {
 	Hash    []byte
 }
 
+var (
+	users map[uint64]*UserRecord = make(map[uint64]*UserRecord)
+)
+
 // Creates a new UserManager Instance
 func NewUserManager(indexPath, usersDir string) (*UserManager, error) {
 	um := &UserManager{
 		indexPath: indexPath,
 		usersDir:  usersDir,
-		users:     make(map[uint64]*UserRecord),
+		users:     users,
 	}
 	//Ensure the directory exists
 	if err := os.MkdirAll(usersDir, 0755); err != nil {
@@ -106,6 +110,21 @@ func (um *UserManager) GetUserById(userId uint64) (*UserRecord, error) {
 	defer um.mu.Unlock()
 	um.users[userRecord.Id] = &userRecord
 	return &userRecord, nil
+}
+
+func GetByCharacterName(characterName string) *UserRecord {
+	if len(characterName) <= 0 {
+		logger.Warn("Something asked for a character name of 0 length")
+		return nil
+	}
+
+	for _, u := range users {
+		if strings.ToLower(u.Char.Name) == strings.ToLower(characterName) {
+			return u
+		}
+	}
+
+	return nil
 }
 
 func (um *UserManager) PasswordMeetsMinimums(input string, username string) bool {

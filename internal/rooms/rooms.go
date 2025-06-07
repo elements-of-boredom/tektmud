@@ -227,12 +227,23 @@ func (r *Room) ShowRoom(userId uint64) {
 }
 
 func (r *Room) SendText(message string, toExclude ...uint64) {
-	//command.SendMessage to user
 	commands.QueueGameCommand(0, commands.Message{
 		RoomKey:         MakeKey(r.AreaId, r.Id),
 		ExcludedUserIds: toExclude,
 		Text:            message,
 	})
+}
+
+func (r *Room) SendAreaText(message string, toExclude ...uint64) {
+	for key := range roomOccupants {
+		if strings.HasPrefix(key, r.AreaId) {
+			commands.QueueGameCommand(0, commands.Message{
+				RoomKey:         key,
+				ExcludedUserIds: toExclude,
+				Text:            message,
+			})
+		}
+	}
 }
 
 func RemoveFromRoom(userId uint64, areaId, roomId string) {

@@ -9,4 +9,4 @@
  {{ padRight 9 "HP" }}: {{ padRight 15 .Hp }} {{ padRight 9 "Mana"}}: {{ padRight 15 .Mana }}
  {{ padRight 9 "Endurance" }}: {{ padRight 15 .Endurance }} {{ padRight 9 "Shipthing"}}: {{ padRight 15 .ShipThing }}
 
- Force : {{.Force }}  Reflex:{{ .Reflex }}  Acuity:{{ .Acuity }}  Insight:{{ .Insight }} Heart:{{ .Heart }}
+ Force :{{.Force }}  Reflex:{{ .Reflex }}  Acuity:{{ .Acuity }}  Insight:{{ .Insight }}  Heart:{{ .Heart }}
