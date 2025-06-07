@@ -58,6 +58,7 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 		var args []string = make([]string, max(len(parts)-1, 1))
 		if len(parts) > 0 {
 			cmd = parts[0]
+			args = parts[1:]
 		}
 
 		isExit := room.IsExitCommand(cmd)
@@ -69,7 +70,6 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 
 		cmdHandler, ok := usercommands.UserHandlers[cmd]
 		if ok {
-
 			//If this is an admin command and they aren't an admin just act like we dont
 			//know this command exists.
 			if cmdHandler.IsAdminCommand && !user.HasRole(users.RoleAdmin) {

@@ -13,6 +13,10 @@ import (
 	"text/template"
 )
 
+var (
+	tplm *TemplateManager
+)
+
 // ColorTemplate wraps template with color and i18n support
 type ColorTemplate struct {
 	tmpl *template.Template
@@ -184,18 +188,32 @@ func defaultColorMap() map[string]string {
 	}
 }
 
+func Initialize() *TemplateManager {
+	tplm = NewTemplateManager()
+
+	return tplm
+}
+
 func NewTemplateManager() *TemplateManager {
 	return &TemplateManager{
 		templates: make(map[string]*ColorTemplate),
 	}
 }
 
-// Expose a way to apply coloring to non-templated strings
 func (tm *TemplateManager) Colorize(text string, useTrueColor bool) string {
 	return processColors(text, useTrueColor)
 }
 
-func (tm *TemplateManager) Process(templateName string, maybeData ...any) (string, error) {
+// Expose a way to apply coloring to non-templated strings
+func Colorize(text string, useTrueColor bool) string {
+	return processColors(text, useTrueColor)
+}
+
+func Process(templateName string, maybeData ...any) (string, error) {
+	return tplm.Process(templateName, maybeData...)
+}
+
+func (tp *TemplateManager) Process(templateName string, maybeData ...any) (string, error) {
 
 	var data any
 	if len(maybeData) > 0 {
@@ -213,11 +231,11 @@ func (tm *TemplateManager) Process(templateName string, maybeData ...any) (strin
 		}
 	}
 
-	if err := tm.LoadTemplate(templateName, reload); err != nil {
+	if err := tp.loadTemplate(templateName, reload); err != nil {
 		return "[Error loading template]", err
 	}
 
-	output, err := tm.Execute(templateName, data)
+	output, err := tp.execute(templateName, data)
 	if err != nil {
 		return "[Error executing template]", err
 	}
@@ -228,7 +246,7 @@ func (tm *TemplateManager) Process(templateName string, maybeData ...any) (strin
 // This approach assumes we -always- want to cache a template
 // that may not scale at some point. May need to handle differently
 // or expire cache or something
-func (tm *TemplateManager) LoadTemplate(name string, reload ...bool) error {
+func (tm *TemplateManager) loadTemplate(name string, reload ...bool) error {
 	var forceReload bool = false
 	if len(reload) > 0 {
 		forceReload = reload[0]
@@ -258,7 +276,7 @@ func (tm *TemplateManager) LoadTemplate(name string, reload ...bool) error {
 }
 
 // Executes the template and processes color
-func (tm *TemplateManager) Execute(name string, data interface{}) (string, error) {
+func (tm *TemplateManager) execute(name string, data any) (string, error) {
 	tmpl, exists := tm.templates[name]
 	if !exists {
 		return "", fmt.Errorf("template %s not found", name)

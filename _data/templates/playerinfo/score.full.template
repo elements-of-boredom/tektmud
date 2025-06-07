@@ -1,0 +1,12 @@
+
+{{ repeat 70 "-" }}
+   {{ .Name }} Full
+{{ repeat 70 "-" }}
+ {{ padRight 9 "Race" }}: {{ padRight 15 .Race }} {{ padRight 9 "Gender" }}: {{ .Gender }}
+ {{ padRight 9 "Class" }}: {{ padRight 15 .Class }} {{ padRight 9 "Age" }}: {{ .Age }}
+ {{ padRight 9 "Level" }}: {{ padRight 15 .Level }} {{ padRight 9 "Something"}}: ???
+
+ {{ padRight 9 "HP" }}: {{ padRight 15 .Hp }} {{ padRight 9 "Mana"}}: {{ padRight 15 .Mana }}
+ {{ padRight 9 "Endurance" }}: {{ padRight 15 .Endurance }} {{ padRight 9 "Shipthing"}}: {{ padRight 15 .ShipThing }}
+
+ Force : {{.Force }}  Reflex:{{ .Reflex }}  Acuity:{{ .Acuity }}  Insight:{{ .Insight }} Heart:{{ .Heart }}

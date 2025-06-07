@@ -55,8 +55,8 @@ func NewMudServer() (*MudServer, error) {
 	}
 
 	//Templates & Localization
-	language.Initialize() //make sure i18n support is setup
-	tm := templates.NewTemplateManager()
+	language.Initialize()        //make sure i18n support is setup
+	tm := templates.Initialize() //make sure Templates are setup.
 
 	//bootup our world manager
 	wm := world.NewWorldManager(userManager, tm)

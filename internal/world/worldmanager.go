@@ -291,10 +291,6 @@ func (wm *WorldManager) HandleInputImmediate(characterId uint64, input string) e
 
 // AddCharacter brings a character into the world
 func (wm *WorldManager) AddCharacter(character *character.Character, conn *connections.PlayerConnection) error {
-	// Set up default handlers if character has none
-	if len(character.Handlers) == 0 {
-		wm.setupDefaultHandlers(character)
-	}
 
 	// Determine spawn location
 	areaId, roomId := wm.getSpawnLocation(character)
@@ -378,49 +374,5 @@ func (wm *WorldManager) SendToCharacter(character *character.Character, message 
 
 	if exists {
 		conn.Conn.Write([]byte(message + "\n"))
-	}
-}
-
-func (wm *WorldManager) registerHandlers() {
-	quit := NewQuitHandler()
-	defaultHandler := NewDefaultHandler()
-	builder := NewBuilderHandler()
-	builderHelp := NewBuilderHelpHandler()
-
-	wm.inputHandlers = map[string]InputHandler{
-		quit.Name():        quit,
-		builder.Name():     builder,
-		builderHelp.Name(): builderHelp,
-
-		//ALWAYS LAST
-		defaultHandler.Name(): defaultHandler,
-	}
-
-}
-
-// setupDefaultHandlers adds standard handlers to a character
-func (wm *WorldManager) setupDefaultHandlers(c *character.Character) {
-
-	// Add admin handlers if character is an admin
-	/*
-		if character.IsAdmin() {
-			character.AddHandler(NewAdminHandler())
-			character.AddHandler(NewAdminHelpHandler())
-			character.AddHandler(NewDebugHandler()) // Debug commands for admins
-		}
-	*/
-
-	//character.AddHandler(NewSpellHandler())  // Spell casting
-	//character.AddHandler(NewAttackHandler()) // Combat commands
-
-	//TODO: Fix this ugly string crap
-	c.AddHandler("quit")
-	c.AddHandler("default") // Always last
-
-	if c.AdminCtx != nil {
-		if c.AdminCtx.HasRole(character.AdminRoleBuilder) || c.AdminCtx.HasRole(character.AdminRoleOwner) {
-			c.AddHandler("builder")
-			c.AddHandler("builder_help")
-		}
 	}
 }
