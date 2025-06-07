@@ -1,0 +1,42 @@
+id: 3003
+title: "Equipment Storage"
+description: |
+  This compact storage room contains shelves lined with medical equipment and 
+  supplies. Surgical instruments gleam under the overhead lights, while 
+  various pharmaceuticals are secured in climate-controlled containers. 
+  A workbench along one wall holds diagnostic tools.
+
+coordinates:
+  x: 1
+  y: 1
+  z: 0
+
+exits:
+  - direction: "west"
+    destination: "3002"
+    hidden: false
+
+room_type: "indoor"
+light_level: "normal"
+
+items:
+  - id: "surgical_tools"
+    quantity: 1
+    reset_timer: 1200
+  - id: "bandages"
+    quantity: 5
+    reset_timer: 300
+  - id: "stim_pack"
+    quantity: 3
+    reset_timer: 900
+
+npcs:
+  - id: "supply_officer"
+    quantity: 1
+    reset_timer: 3600
+
+room_flags:
+  - "safe"
+
+scripts: []
+triggers: []

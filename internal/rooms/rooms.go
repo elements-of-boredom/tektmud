@@ -28,13 +28,15 @@ const (
 	Northwest Direction = "northwest"
 	Up        Direction = "up"
 	Down      Direction = "down"
+	In        Direction = "in"
+	Out       Direction = "out"
 	Special   Direction = "special"
 )
 
 var Directions []Direction = []Direction{
 	North, South, East, West,
 	Northeast, Southeast, Southwest, Northwest,
-	Up, Down,
+	Up, Down, In, Out,
 }
 
 // DirectionAliases maps common abbreviations to directions
@@ -49,6 +51,8 @@ var DirectionAliases = map[string]Direction{
 	"nw": Northwest,
 	"u":  Up,
 	"d":  Down,
+	"i":  In,
+	"o":  Out,
 }
 
 var ReverseDirections = map[Direction]Direction{
@@ -62,6 +66,8 @@ var ReverseDirections = map[Direction]Direction{
 	Northwest: Southeast,
 	Up:        Down,
 	Down:      Up,
+	In:        Out,
+	Out:       In,
 }
 
 func GetReverseDirection(dir Direction) Direction {
@@ -72,32 +78,72 @@ func GetReverseDirection(dir Direction) Direction {
 	return Special // For special exits, return special
 }
 
+type AreasConfig struct {
+	Areas []AreaDefinition `yaml:"areas"`
+}
+
+type AreaDefinition struct {
+	Id          string            `yaml:"id"`
+	Name        string            `yaml:"name"`
+	Description string            `yaml:"description"`
+	Path        string            `yaml:"path"`
+	Properties  map[string]string `yaml:"properties,omitempty"`
+}
+
 // Area represents a collection of rooms
 type Area struct {
-	Id          string            `json:"id"`
-	Name        string            `json:"name"`
-	Description string            `json:"description"`
-	Rooms       map[string]*Room  `json:"rooms"`
-	Properties  map[string]string `json:"properties,omitempty"`
+	Id          string            `yaml:"id"`
+	Name        string            `yaml:"name"`
+	Description string            `yaml:"description"`
+	Rooms       map[string]*Room  `yaml:"rooms"`
+	Properties  map[string]string `yaml:"properties,omitempty"`
+}
+
+type Coordinates struct {
+	X int `yaml:"x"`
+	Y int `yaml:"y"`
+	Z int `yaml:"z"`
+}
+
+// PLACEHOLDERS
+type RoomItem struct {
+	Id         string `yaml:"id"`
+	Quantity   int    `yaml:"quantity"`
+	Respawn    *bool  `yaml:"respawn,omitempty"`
+	ResetTimer *int   `yaml:"reset_timer,omitempty"`
+}
+
+type RoomNPC struct {
+	Id         string `yaml:"id"`
+	Quantity   int    `yaml:"quantity"`
+	ResetTimer int    `yaml:"reset_timer"`
 }
 
 // Room represents a location in the game world
 type Room struct {
-	Id          string            `json:"id"`
-	Title       string            `json:"title"`
-	Description string            `json:"description"`
-	Exits       []Exit            `json:"exits"`
-	AreaId      string            `json:"area_id"`
-	Properties  map[string]string `json:"properties,omitempty"` // Custom room properties
+	Id          string            `yaml:"id"`
+	AreaId      string            `yaml:"-"`
+	Title       string            `yaml:"title"`
+	Description string            `yaml:"description"`
+	Coordinates Coordinates       `yaml:"coordinates"`
+	Exits       []Exit            `yaml:"exits"`
+	RoomType    string            `yaml:"room_type"`
+	LightLevel  string            `yaml:"light_level"`
+	Items       []RoomItem        `yaml:"items"`
+	NPCs        []RoomNPC         `yaml:"npcs"`
+	RoomFlags   []string          `yaml:"room_flags"`
+	Scripts     []interface{}     `yaml:"scripts"`
+	Triggers    []interface{}     `yaml:"triggers"`
+	Properties  map[string]string `yaml:"properties,omitempty"` // Custom room properties
 }
 
 // Exit represents a connection between rooms
 type Exit struct {
-	Direction   Direction `json:"direction"`
-	Destination string    `json:"destination"` // Room ID
-	Hidden      bool      `json:"hidden"`      // For secret exits
-	Description string    `json:"description,omitempty"`
-	Keywords    []string  `json:"keywords,omitempty"` // For special exits
+	Direction   Direction `yaml:"direction"`
+	Destination string    `yaml:"destination"` // Room ID
+	Hidden      bool      `yaml:"hidden"`      // For secret exits
+	Description string    `yaml:"description,omitempty"`
+	Keywords    []string  `yaml:"keywords,omitempty"` // For special exits
 }
 
 // Used just to see if the request is valid for attempting movement

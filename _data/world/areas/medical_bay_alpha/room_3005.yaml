@@ -1,0 +1,41 @@
+id: 3005
+title: "Quarantine Airlock"
+description: |
+  You stand in a sterile decontamination chamber with gleaming metal walls. 
+  Red warning lights indicate the quarantine protocols are active. Nozzles 
+  in the ceiling can spray disinfectant mist when needed. A sealed door to 
+  the north leads into the quarantine bay.
+
+coordinates:
+  x: 0
+  y: 2
+  z: 0
+
+exits:
+  - direction: "south"
+    destination: "3002"
+    hidden: false
+  - direction: "in"
+    destination: "3007"
+    hidden: false
+    description: "A heavy sealed door marked with biohazard warnings"
+
+room_type: "indoor"
+light_level: "bright"
+
+items:
+  - id: "decon_spray"
+    quantity: 1
+    respawn: false
+  - id: "hazmat_suit"
+    quantity: 2
+    reset_timer: 1800
+
+npcs: []
+
+room_flags:
+  - "safe"
+  - "decontamination"
+
+scripts: []
+triggers: []

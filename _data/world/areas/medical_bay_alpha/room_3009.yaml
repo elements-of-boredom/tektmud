@@ -1,0 +1,49 @@
+id: 3009
+title: "Advanced Surgical Suite"
+description: |
+  This state-of-the-art operating theater features robotic surgical arms 
+  suspended from the ceiling and a central surgical table surrounded by 
+  holographic displays. The room maintains perfect sterility through 
+  atmospheric processors. Emergency medical supplies are readily accessible.
+
+coordinates:
+  x: 1
+  y: 4
+  z: 1
+
+exits:
+  - direction: "south"
+    destination: "3008"
+    hidden: false
+  - direction: "north"
+    destination: "3010"
+    hidden: false
+
+room_type: "indoor"
+light_level: "bright"
+
+items:
+  - id: "surgical_table"
+    quantity: 1
+    respawn: false
+  - id: "robotic_arm"
+    quantity: 4
+    respawn: false
+  - id: "holographic_display"
+    quantity: 6
+    respawn: false
+  - id: "emergency_supplies"
+    quantity: 1
+    reset_timer: 1800
+
+npcs:
+  - id: "surgical_droid"
+    quantity: 2
+    reset_timer: 7200
+
+room_flags:
+  - "safe"
+  - "sterile"
+
+scripts: []
+triggers: []

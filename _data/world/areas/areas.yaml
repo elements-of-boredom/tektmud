@@ -1,0 +1,9 @@
+areas:
+  - id: "medical_bay_alpha"
+    name: "Medical Bay Alpha"
+    description: "A sterile medical facility aboard the research station, featuring advanced cloning technology and rehabilitation chambers."
+    path: "medical_bay_alpha"
+    properties:
+      difficulty: "newbie"
+      max_level: 10
+      zone_type: "safe"

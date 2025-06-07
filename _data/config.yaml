@@ -18,8 +18,8 @@ paths:
   classes: "classes"
 core:
   tick_rate : 100
-  default_area: "newbie"
-  default_room: "start"
+  default_area: "medical_bay_alpha"
+  default_room: "3001"
 logging:
   log_dir: "logs"
   log_file: "mud.log"

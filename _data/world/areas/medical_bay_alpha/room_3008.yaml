@@ -1,0 +1,41 @@
+id: 3008
+title: "Isolation Chamber"
+description: |
+  This small, sealed chamber is designed for maximum containment of dangerous 
+  specimens. The walls are lined with energy barriers, and the air is 
+  completely recycled through multiple filtration systems. It feels cramped 
+  and oppressive, with only basic life support systems active.
+
+coordinates:
+  x: 1
+  y: 3
+  z: 1
+
+exits:
+  - direction: "out"
+    destination: "3007"
+    hidden: false
+  - direction: "north"
+    destination: "3009"
+    hidden: false
+
+room_type: "indoor"
+light_level: "dim"
+
+items:
+  - id: "containment_field"
+    quantity: 1
+    respawn: false
+  - id: "specimen_container"
+    quantity: 2
+    reset_timer: 7200
+
+npcs: []
+
+room_flags:
+  - "safe"
+  - "contained"
+  - "cramped"
+
+scripts: []
+triggers: []

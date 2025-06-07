@@ -1,0 +1,45 @@
+id: 3001
+title: "Cloning Chambers"
+description: |
+  You find yourself in a pristine white chamber filled with rows of cylindrical 
+  cloning tubes. Each tube glows with a soft blue light, containing swirling 
+  bio-fluid. Neural interface cables snake across the ceiling like mechanical 
+  vines. A gentle hum fills the air from the life support systems. To the north, 
+  an airlock leads to the main corridor.
+
+coordinates:
+  x: 0
+  y: 0
+  z: 0
+
+exits:
+  - direction: "north"
+    destination: "3002"
+    hidden: false
+
+room_type: "indoor"
+light_level: "bright"
+
+items:
+  - id: "cloning_tube"
+    quantity: 6
+    respawn: false
+  - id: "medical_gown"
+    quantity: 1
+    reset_timer: 300
+  - id: "neural_interface"
+    quantity: 3
+    respawn: false
+
+npcs:
+  - id: "medical_droid"
+    quantity: 1
+    reset_timer: 1800
+
+room_flags:
+  - "safe"
+  - "no_summon"
+  - "newbie"
+
+scripts: []
+triggers: []

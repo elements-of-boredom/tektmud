@@ -233,7 +233,7 @@ func (s *MudServer) handleNewConnection(conn net.Conn, port int) {
 func (s *MudServer) handlePlayerSession(playerId uint64, pc *connections.PlayerConnection) {
 	//For now we are just going to tell us how to exit
 	//and otehrwise echo stuff back.
-	s.sendToPlayer(pc, "Your are now in the game! type 'quit' to exit.")
+	s.sendToPlayer(pc, "You are now in the game! type 'quit' to exit.\n")
 
 	for {
 		select {

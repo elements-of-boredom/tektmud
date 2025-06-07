@@ -1,0 +1,48 @@
+id: 3007
+title: "Quarantine Laboratory"
+description: |
+  Behind the sealed door lies a high-security laboratory for containing and 
+  studying dangerous pathogens. The room is kept under negative pressure, 
+  with multiple layers of containment. Research equipment lines the walls, 
+  and a small chamber provides additional isolation space.
+
+coordinates:
+  x: 0
+  y: 3
+  z: 1
+
+exits:
+  - direction: "out"
+    destination: "3005"
+    hidden: false
+  - direction: "special"
+    destination: "3008"
+    hidden: true
+    description: "A small sealed isolation chamber"
+    keywords: ["enter"]
+
+room_type: "indoor"
+light_level: "bright"
+
+items:
+  - id: "research_equipment"
+    quantity: 1
+    respawn: false
+  - id: "pathogen_sample"
+    quantity: 3
+    reset_timer: 3600
+  - id: "containment_unit"
+    quantity: 2
+    respawn: false
+
+npcs:
+  - id: "xenobiologist"
+    quantity: 1
+    reset_timer: 5400
+
+room_flags:
+  - "safe"
+  - "quarantine"
+
+scripts: []
+triggers: []

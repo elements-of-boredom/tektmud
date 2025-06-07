@@ -1,0 +1,42 @@
+id: 3006
+title: "Observation Deck"
+description: |
+  This elevated platform provides a clear view of the medical bay below through 
+  reinforced transparent aluminum windows. Control panels and monitoring 
+  equipment allow oversight of all medical operations. The stars are visible 
+  through a large viewport on the far wall.
+
+coordinates:
+  x: -1
+  y: 1
+  z: 2
+
+exits:
+  - direction: "down"
+    destination: "3004"
+    hidden: false
+
+room_type: "indoor"
+light_level: "normal"
+
+items:
+  - id: "control_panel"
+    quantity: 3
+    respawn: false
+  - id: "monitoring_station"
+    quantity: 1
+    respawn: false
+  - id: "star_chart"
+    quantity: 1
+    reset_timer: 7200
+
+npcs:
+  - id: "medical_officer"
+    quantity: 1
+    reset_timer: 3600
+
+room_flags:
+  - "safe"
+
+scripts: []
+triggers: []

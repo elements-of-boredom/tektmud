@@ -1,0 +1,45 @@
+id: 3002
+title: "Main Medical Corridor"
+description: |
+  A wide corridor stretches east and west, with polished metal walls bearing 
+  the insignia of the Galactic Medical Corps. Soft lighting panels illuminate 
+  the path, while air recyclers hum quietly overhead. To the south lies the 
+  cloning chambers, while passages lead to various medical facilities.
+
+coordinates:
+  x: 0
+  y: 1
+  z: 0
+
+exits:
+  - direction: "south"
+    destination: "3001"
+    hidden: false
+  - direction: "east"
+    destination: "3003"
+    hidden: false
+  - direction: "west"
+    destination: "3004"
+    hidden: false
+  - direction: "north"
+    destination: "3005"
+    hidden: false
+
+room_type: "indoor"
+light_level: "normal"
+
+items:
+  - id: "wall_panel"
+    quantity: 4
+    respawn: false
+  - id: "medical_kit"
+    quantity: 1
+    reset_timer: 600
+
+npcs: []
+
+room_flags:
+  - "safe"
+
+scripts: []
+triggers: []

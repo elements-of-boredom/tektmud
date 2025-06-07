@@ -1,0 +1,43 @@
+id: 3004
+title: "Recovery Ward"
+description: |
+  Several bio-beds line the walls of this quiet recovery area. Each bed is 
+  equipped with vital sign monitors and life support connections. The lighting 
+  is dimmed to promote rest, and the air carries a faint scent of medical 
+  antiseptic. A stairwell leads up to the observation deck.
+
+coordinates:
+  x: -1
+  y: 1
+  z: 0
+
+exits:
+  - direction: "east"
+    destination: "3002"
+    hidden: false
+  - direction: "up"
+    destination: "3006"
+    hidden: false
+
+room_type: "indoor"
+light_level: "dim"
+
+items:
+  - id: "bio_bed"
+    quantity: 4
+    respawn: false
+  - id: "medical_scanner"
+    quantity: 2
+    respawn: false
+
+npcs:
+  - id: "nurse_droid"
+    quantity: 1
+    reset_timer: 2400
+
+room_flags:
+  - "safe"
+  - "quiet"
+
+scripts: []
+triggers: []

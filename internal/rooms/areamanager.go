@@ -10,6 +10,8 @@ import (
 	configs "tektmud/internal/config"
 	"tektmud/internal/logger"
 	"tektmud/internal/templates"
+
+	"gopkg.in/yaml.v3"
 )
 
 var (
@@ -33,40 +35,99 @@ func getDataPath() string {
 	return areaDataPath
 }
 
-// LoadArea loads an area from file
-func (am *AreaManager) LoadArea(areaID string) error {
-	am.mu.Lock()
-	defer am.mu.Unlock()
+// Loads all areas at a known path
+func (am *AreaManager) LoadAreas(worldPath string) (map[string]*Area, error) {
+	areas := make(map[string]*Area)
 
-	filename := filepath.Join(getDataPath(), areaID+".json")
-	data, err := os.ReadFile(filename)
+	//read the areas.yaml file
+	areasFilePath := filepath.Join(worldPath, "areas", "areas.yaml")
+	areasData, err := os.ReadFile(areasFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to read area file %s: %w", filename, err)
+		return nil, fmt.Errorf("failed to read areas file: %w", err)
 	}
 
-	var area Area
-	if err := json.Unmarshal(data, &area); err != nil {
-		return fmt.Errorf("failed to parse area file %s: %w", filename, err)
+	var areaConfig AreasConfig
+	if err := yaml.Unmarshal(areasData, &areaConfig); err != nil {
+		return nil, fmt.Errorf("failed to parse areas file :%w", err)
 	}
 
-	// Initialize rooms map if nil
-	if area.Rooms == nil {
-		area.Rooms = make(map[string]*Room)
+	//Process each area in the file
+	for _, areaDef := range areaConfig.Areas {
+		area := &Area{
+			Id:          areaDef.Id,
+			Name:        areaDef.Name,
+			Description: areaDef.Description,
+			Rooms:       make(map[string]*Room),
+			Properties:  areaDef.Properties,
+		}
+
+		//Load the rooms for the area
+		areaPath := filepath.Join(worldPath, "areas", areaDef.Path)
+		rooms, err := am.loadRoomsForArea(area.Id, areaPath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to load rooms for area %s: %w", areaDef.Id, err)
+		}
+
+		area.Rooms = rooms
+		areas[areaDef.Id] = area
 	}
 
-	// Set area ID for all rooms
-	for _, room := range area.Rooms {
-		room.AreaId = area.Id
+	return areas, nil
+}
+
+func (am *AreaManager) loadRoomsForArea(areaId, areaPath string) (map[string]*Room, error) {
+	rooms := make(map[string]*Room)
+
+	// Check if area directory exists
+	if _, err := os.Stat(areaPath); os.IsNotExist(err) {
+		return rooms, nil // Return empty map if directory doesn't exist
 	}
 
-	am.areas[area.Id] = &area
-	return nil
+	// Read all files in the area directory
+	files, err := os.ReadDir(areaPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read area directory: %w", err)
+	}
+
+	for _, file := range files {
+		if file.IsDir() {
+			continue
+		}
+
+		// Only process .yaml and .yml files that start with "room_"
+		fileName := file.Name()
+		if !strings.HasPrefix(fileName, "room_") {
+			continue
+		}
+
+		if !strings.HasSuffix(fileName, ".yaml") && !strings.HasSuffix(fileName, ".yml") {
+			continue
+		}
+
+		// Load the room file
+		roomFilePath := filepath.Join(areaPath, fileName)
+		roomData, err := os.ReadFile(roomFilePath)
+		if err != nil {
+			return nil, fmt.Errorf("failed to read room file %s: %w", fileName, err)
+		}
+
+		var room Room
+		if err := yaml.Unmarshal(roomData, &room); err != nil {
+			return nil, fmt.Errorf("failed to parse room file %s: %w", fileName, err)
+		}
+		room.AreaId = areaId
+		rooms[room.Id] = &room
+	}
+
+	return rooms, nil
 }
 
 func Initialize() (am *AreaManager, err error) {
-	if err := areaManager.LoadAllAreas(); err != nil {
+	loadedAreas, err := areaManager.LoadAreas(getDataPath())
+	if err != nil {
 		return nil, fmt.Errorf("failed to load areas: %w", err)
 	}
+	areaManager.areas = loadedAreas
 
 	//Validate the room connections
 	if errors := areaManager.ValidateRoomConnections(); len(errors) > 0 {
@@ -76,31 +137,6 @@ func Initialize() (am *AreaManager, err error) {
 		}
 	}
 	return areaManager, nil
-}
-
-// LoadAllAreas loads all area files from the data directory
-func (am *AreaManager) LoadAllAreas() error {
-	areaDataPath := getDataPath()
-	dirEntries, err := os.ReadDir(areaDataPath)
-	if err != nil {
-		return fmt.Errorf("failed to read area directory %s, %w", areaDataPath, err)
-	}
-
-	var loadErrors []error
-	for _, file := range dirEntries {
-		if filepath.Ext(file.Name()) == ".json" {
-			areaID := file.Name()[:len(file.Name())-5] // Remove .json extension
-			if err := am.LoadArea(areaID); err != nil {
-				loadErrors = append(loadErrors, err)
-			}
-		}
-	}
-
-	if len(loadErrors) > 0 {
-		return fmt.Errorf("failed to load some areas: %v", loadErrors)
-	}
-
-	return nil
 }
 
 // GetArea returns an area by ID
@@ -291,7 +327,8 @@ func (am *AreaManager) FormatRoom(areaID, roomID string, tplm *templates.Templat
 	// Add exits
 	var visibleExits []string
 	for _, exit := range room.Exits {
-		if !exit.Hidden {
+		dir := string(exit.Direction)
+		if !exit.Hidden && dir != "special" {
 			visibleExits = append(visibleExits, string(exit.Direction))
 		}
 	}

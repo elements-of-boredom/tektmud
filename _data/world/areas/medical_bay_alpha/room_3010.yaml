@@ -1,0 +1,44 @@
+id: 3010
+title: "Medical Archives"
+description: |
+  Towering data storage units line the walls of this repository, containing 
+  medical records and research data from across the galaxy. Holographic 
+  interfaces float at various workstations, allowing researchers to access 
+  vast databases of medical knowledge. The gentle hum of cooling systems 
+  keeps the servers at optimal temperature.
+
+coordinates:
+  x: 1
+  y: 5
+  z: 1
+
+exits:
+  - direction: "south"
+    destination: "3009"
+    hidden: false
+
+room_type: "indoor"
+light_level: "normal"
+
+items:
+  - id: "data_terminal"
+    quantity: 4
+    respawn: false
+  - id: "medical_database"
+    quantity: 1
+    respawn: false
+  - id: "research_notes"
+    quantity: 8
+    reset_timer: 3600
+
+npcs:
+  - id: "archivist_droid"
+    quantity: 1
+    reset_timer: 10800
+
+room_flags:
+  - "safe"
+  - "quiet"
+
+scripts: []
+triggers: []
