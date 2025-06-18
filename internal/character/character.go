@@ -55,9 +55,9 @@ func NewCharacter(id uint64, name string, raceId, classId int, gender string) *C
 func (c *Character) ResetBalances() {
 	c.Balance = NewBalance()
 	// Set default balance cooldowns
-	c.Balance.SetCooldown(AttackBalance, 2*time.Second)
-	c.Balance.SetCooldown(HealingBalance, 4*time.Second)
-	c.Balance.SetCooldown(MovementBalance, 200*time.Millisecond)
+	c.Balance.SetCooldown(PhysicalBalance, 2*time.Second)
+	c.Balance.SetCooldown(MentalBalance, 2*time.Second)
+	c.Balance.SetCooldown(MovementBalance, 100*time.Millisecond)
 }
 
 func (c *Character) AddHandler(name string) {

@@ -9,8 +9,8 @@ import (
 type BalanceType string
 
 const (
-	AttackBalance   BalanceType = "attack"
-	HealingBalance  BalanceType = "healing"
+	PhysicalBalance BalanceType = "physical"
+	MentalBalance   BalanceType = "mental"
 	MovementBalance BalanceType = "movement"
 )
 
@@ -56,6 +56,25 @@ func (b *Balance) HasBalance(balanceType BalanceType) bool {
 	}
 
 	return time.Now().After(cooldownEnd)
+}
+
+func (b *Balance) GetAndRestoreBalances() []string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	var balanceMessage []string = []string{}
+	for k, v := range b.balances {
+		if time.Now().After(v) {
+			switch k {
+			case PhysicalBalance:
+				balanceMessage = append(balanceMessage, "$6You have recovered your balance on all limbs.")
+			case MentalBalance:
+				balanceMessage = append(balanceMessage, "$6You have recovered your mental equilibrium.")
+			}
+			//delete(b.balances, k) //Cant delete or we lose default balance time. Maybe thats ok.
+		}
+	}
+	return balanceMessage
 }
 
 // TimeUntilBalance returns the time remaining until a balance is restored

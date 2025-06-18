@@ -132,7 +132,21 @@ func (tm *TickManager) ProcessTick(wm *WorldManager) {
 	tm.tickCount++
 	now := time.Now()
 
-	//Process everything read
+	//Update balances for characters
+	for _, c := range wm.characters {
+		p, err := wm.userManager.GetUserById(c.Id)
+		if err != nil {
+			continue
+		}
+		bals := c.Balance.GetAndRestoreBalances()
+		if len(bals) > 0 {
+			for _, balanceMessage := range bals {
+				p.SendText(wm.tmpl.Colorize(balanceMessage+"$n\n", false))
+			}
+		}
+	}
+
+	//Process everything in our queue
 	for tm.queue.Len() > 0 {
 
 		next := tm.queue[0]

@@ -19,7 +19,7 @@ import (
 )
 
 type WorldConfig struct {
-	TickRate    time.Duration //How often our game loop runs
+	TickRate    time.Duration //Default is 100ms or 10 ticks a second, which means we can support balances of N.N seconds
 	DefaultArea string        //Default area for new characters
 	DefaultRoom string        //Default room for new characters
 }
@@ -122,6 +122,7 @@ func (wm *WorldManager) Start() {
 		return
 	}
 	wm.running = true
+	//The ticker controls how frequently balances are restored
 	wm.ticker = time.NewTicker(wm.Config.TickRate)
 	wm.mu.Unlock()
 
@@ -253,8 +254,6 @@ func (wm *WorldManager) HandleInput(characterId uint64, input string) error {
 		UserId: characterId,
 		Text:   input,
 	})
-
-	//TODO: Need to create an Input listener that will run through usercommands.
 
 	/*
 		// Queue the input for processing (with timeout to prevent blocking)

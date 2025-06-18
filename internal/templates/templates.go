@@ -213,6 +213,20 @@ func Process(templateName string, maybeData ...any) (string, error) {
 	return tplm.Process(templateName, maybeData...)
 }
 
+func ClearCache(templates ...string) {
+
+	if len(templates) == 0 {
+		//Clearing them all
+		tplm.templates = make(map[string]*ColorTemplate)
+		return
+	}
+
+	templatenames := strings.Fields(templates[0])
+	for _, name := range templatenames {
+		delete(tplm.templates, name)
+	}
+}
+
 func (tp *TemplateManager) Process(templateName string, maybeData ...any) (string, error) {
 
 	var data any

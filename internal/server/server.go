@@ -247,7 +247,11 @@ func (s *MudServer) handlePlayerSession(playerId uint64, pc *connections.PlayerC
 			}
 
 			input := strings.TrimSpace(line)
-			s.worldManager.HandleInput(playerId, input)
+			if err := s.worldManager.HandleInput(playerId, input); err != nil {
+				logger.Error("Unknowing handling error", "user", pc.Username, "error", err)
+				pc.Send("$RUnknown error handling input. Disconnecting!")
+				return
+			}
 		}
 	}
 }

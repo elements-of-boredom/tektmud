@@ -92,16 +92,20 @@ func padLeft(width int, stringArgs ...string) string {
 //
 //	{{ padRight 10 }}
 //	OUTPUT: 	"          "
-//	{{ padRight 10 "monkeys "."}}
+//	{{ padRight 10 "monkeys "." "$r"}}
 //	OUTPUT: "monkeys..."
 func padRight(width int, stringArgs ...string) string {
 	var toPad string = ""
 	var padWith string = " "
+	var colorCode string = ""
 
 	if len(stringArgs) > 0 {
 		toPad = stringArgs[0]
 		if len(stringArgs) > 1 {
 			padWith = stringArgs[1]
+		}
+		if len(stringArgs) > 2 {
+			colorCode = stringArgs[2]
 		}
 	}
 
@@ -113,5 +117,5 @@ func padRight(width int, stringArgs ...string) string {
 
 	paddingDifference := width - toPadWidth
 
-	return toPad + strings.Repeat(padWith, paddingDifference)
+	return toPad + colorCode + strings.Repeat(padWith, paddingDifference)
 }
