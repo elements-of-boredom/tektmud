@@ -23,7 +23,7 @@ With one last glance at the world around you, you close your eyes and sleep.
 
 	//
 	commands.QueueGameCommand(player.Id, commands.PlayerQuit{
-		UserId: player.Id,
+		PlayerId: player.Id,
 	})
 
 	return true, nil

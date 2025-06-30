@@ -11,14 +11,14 @@ import (
 )
 
 type InputListener struct {
-	areaManager *rooms.AreaManager
-	userManager *players.PlayerManager
+	areaManager   *rooms.AreaManager
+	playerManager *players.PlayerManager
 }
 
 func NewInputListener(am *rooms.AreaManager, um *players.PlayerManager) *InputListener {
 	return &InputListener{
-		areaManager: am,
-		userManager: um,
+		areaManager:   am,
+		playerManager: um,
 	}
 }
 
@@ -32,11 +32,11 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 		logger.Error("Command", "Expected", "Input", "Actual", ctx.Command.Name())
 	}
 
-	//Check to see if we are ignoring commands for this user.
+	//Check to see if we are ignoring commands for this player.
 	//If so pitch it.
-	user, err := il.userManager.GetPlayerById(input.UserId)
+	player, err := il.playerManager.GetPlayerById(input.PlayerId)
 	if err != nil {
-		logger.Error("User not found", "UserId", input.UserId, "err", err)
+		logger.Error("player not found", "PlayerId", input.PlayerId, "err", err)
 		return commands.Continue
 	}
 
@@ -46,9 +46,9 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 
 		parts := strings.SplitN(input.Text, " ", 2)
 
-		room, exists := il.areaManager.GetRoom(user.Char.AreaId, user.Char.RoomId)
+		room, exists := il.areaManager.GetRoom(player.Char.AreaId, player.Char.RoomId)
 		if !exists {
-			logger.Error("Room not found", "AreaId", user.Char.AreaId, "RoomId", user.Char.RoomId)
+			logger.Error("Room not found", "AreaId", player.Char.AreaId, "RoomId", player.Char.RoomId)
 			return commands.Continue
 		}
 
@@ -73,28 +73,28 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 
 			//If this is an admin command and they aren't an admin just act like we dont
 			//know this command exists.
-			if cmdHandler.IsAdminCommand && !user.HasRole(players.RoleAdmin) {
-				logger.Warn("User attempted admin command but is not an Admin", "userId", user.Id, "cmd", cmd, "args", fmt.Sprintf("[%s]", arguments))
-				//TODO do we tell the user we failed here?
+			if cmdHandler.IsAdminCommand && !player.HasRole(players.RoleAdmin) {
+				logger.Warn("Player attempted admin command but is not an Admin", "player.Id", player.Id, "cmd", cmd, "args", fmt.Sprintf("[%s]", arguments))
+				//TODO do we tell the player we failed here?
 				return commands.Continue
 			}
 			//Otherwise run the command
-			handled, err = cmdHandler.Func(arguments, user, room)
+			handled, err = cmdHandler.Func(arguments, player, room)
 			if err != nil {
 				logger.Error("CmdHandler.Func", "err", err, "cmd", cmd, "args", "args", fmt.Sprintf("[%s]", arguments))
 			}
 		}
 
-		//Its not a general user command see
+		//Its not a general player command see
 		//if this is a special class command
-		//TODO: Check user skills first (often cheaper/free)
+		//TODO: Check player skills first (often cheaper/free)
 		if !handled {
 		}
 
 		//If we make it here, nothing above properly handled this.
 		//Throw the "huh?" equivalent
 		if !handled {
-			user.SendText(fmt.Sprintf("%s is not a valid command.", cmd))
+			player.SendText(fmt.Sprintf("%s is not a valid command.", cmd))
 		}
 
 	} else {

@@ -235,13 +235,13 @@ func (r *Room) Setup() {
 
 }
 
-func MoveToRoom(user *character.Character, origin *Room, destination *Room) error {
+func MoveToRoom(char *character.Character, origin *Room, destination *Room) error {
 
-	RemoveFromRoom(user.Id, origin.AreaId, origin.Id)
+	RemoveFromRoom(char.Id, origin.AreaId, origin.Id)
 
-	user.SetLocation(destination.AreaId, destination.Id)
+	char.SetLocation(destination.AreaId, destination.Id)
 
-	AddToRoom(user.Id, destination.AreaId, destination.Id)
+	AddToRoom(char.Id, destination.AreaId, destination.Id)
 
 	return nil
 }
@@ -268,19 +268,19 @@ func (r *Room) FindExitTo(areaId, roomId string) string {
 	return ""
 }
 
-func (r *Room) ShowRoom(userId uint64) {
-	//command.ShowRoom to user - will need a template manager
+func (r *Room) ShowRoom(playerId uint64) {
+	//command.ShowRoom to player - will need a template manager
 	commands.QueueGameCommand(0, commands.DisplayRoom{
-		UserId:  userId,
-		RoomKey: MakeKey(r.AreaId, r.Id),
+		PlayerId: playerId,
+		RoomKey:  MakeKey(r.AreaId, r.Id),
 	})
 }
 
 func (r *Room) SendText(message string, toExclude ...uint64) {
 	commands.QueueGameCommand(0, commands.Message{
-		RoomKey:         MakeKey(r.AreaId, r.Id),
-		ExcludedUserIds: toExclude,
-		Text:            message,
+		RoomKey:           MakeKey(r.AreaId, r.Id),
+		ExcludedPlayerIds: toExclude,
+		Text:              message,
 	})
 }
 
@@ -288,30 +288,30 @@ func (r *Room) SendAreaText(message string, toExclude ...uint64) {
 	for key := range roomOccupants {
 		if strings.HasPrefix(key, r.AreaId) {
 			commands.QueueGameCommand(0, commands.Message{
-				RoomKey:         key,
-				ExcludedUserIds: toExclude,
-				Text:            message,
+				RoomKey:           key,
+				ExcludedPlayerIds: toExclude,
+				Text:              message,
 			})
 		}
 	}
 }
 
-func RemoveFromRoom(userId uint64, areaId, roomId string) {
+func RemoveFromRoom(playerId uint64, areaId, roomId string) {
 	roomKey := MakeKey(areaId, roomId)
 	mu.Lock()
 	if characters, exists := roomOccupants[roomKey]; exists {
-		roomOccupants[roomKey] = slices.DeleteFunc(characters, func(x uint64) bool { return x == userId })
+		roomOccupants[roomKey] = slices.DeleteFunc(characters, func(x uint64) bool { return x == playerId })
 	}
 	mu.Unlock()
 }
 
-func AddToRoom(userId uint64, areaId, roomId string) {
+func AddToRoom(playerId uint64, areaId, roomId string) {
 	destKey := MakeKey(areaId, roomId)
 	mu.Lock()
 	if roomOccupants[destKey] == nil {
 		roomOccupants[destKey] = []uint64{}
 	}
-	roomOccupants[destKey] = append(roomOccupants[destKey], userId)
+	roomOccupants[destKey] = append(roomOccupants[destKey], playerId)
 	mu.Unlock()
 }
 

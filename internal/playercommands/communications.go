@@ -32,9 +32,9 @@ func Tell(args string, player *players.PlayerRecord, room *rooms.Room) (bool, er
 		return true, nil
 	}
 
-	if targetUser := players.GetByCharacterName(parts[0]); targetUser != nil {
-		targetUser.SendText(templates.Colorize(fmt.Sprintf("$G%s tells you, \"%s\"$n\n", player.Char.Name, parts[1]), false))
-		player.SendText(templates.Colorize(fmt.Sprintf("$GYou tell %s, \"%s\"$n\n", targetUser.Char.Name, parts[1]), false))
+	if targetPlayer := players.GetByCharacterName(parts[0]); targetPlayer != nil {
+		targetPlayer.SendText(templates.Colorize(fmt.Sprintf("$G%s tells you, \"%s\"$n\n", player.Char.Name, parts[1]), false))
+		player.SendText(templates.Colorize(fmt.Sprintf("$GYou tell %s, \"%s\"$n\n", targetPlayer.Char.Name, parts[1]), false))
 	} else {
 		player.SendText(fmt.Sprintf("Unable to send a message to %s", parts[0]))
 	}

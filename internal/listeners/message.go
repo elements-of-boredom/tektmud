@@ -39,8 +39,8 @@ func (il MessageListener) Handle(ctx *commands.CommandContext) commands.CommandR
 		logger.Error("Command", "Expected", "Message", "Actual", ctx.Command.Name())
 	}
 
-	//Message to a specific user
-	if msg.UserId > 0 {
+	//Message to a specific player
+	if msg.PlayerId > 0 {
 
 	}
 
@@ -52,29 +52,29 @@ func (il MessageListener) Handle(ctx *commands.CommandContext) commands.CommandR
 			return commands.Continue
 		}
 
-		for _, userId := range room.GetPlayers() {
+		for _, playerId := range room.GetPlayers() {
 
 			//Don't send messages to the "sender"
-			if msg.UserId == userId {
+			if msg.PlayerId == playerId {
 				continue
 			}
 
 			//Dont send messages to exlcuded Ids
-			excluded := len(msg.ExcludedUserIds)
+			excluded := len(msg.ExcludedPlayerIds)
 			if excluded > 0 {
-				if slices.Contains(msg.ExcludedUserIds, userId) {
+				if slices.Contains(msg.ExcludedPlayerIds, playerId) {
 					continue
 				}
 			}
 
-			if user, err := il.playerManager.GetPlayerById(userId); err == nil {
+			if player, err := il.playerManager.GetPlayerById(playerId); err == nil {
 				/* TODO
 				if msg.IsCommunication && user.IsDeaf {
 					continue
 				}
 				*/
 				text := il.tmpl.Colorize(msg.Text, false)
-				if conn, exists := il.pcs[user.Id]; exists {
+				if conn, exists := il.pcs[player.Id]; exists {
 					conn.Send(text)
 				}
 			}

@@ -63,12 +63,12 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 
 			//This returns false until they can get through login
 			//either with existing account, or new.
-			if user, success := s.processLoginInput(pc, input, loginData); success {
-				//If we make it to here, we are through login (or user creation)
+			if player, success := s.processLoginInput(pc, input, loginData); success {
+				//If we make it to here, we are through login (or player creation)
 				//Add the player to the world manager
 				//pass into our "game loop" that handles commands from the player
-				//Add our user's character to the world
-				if user.Char == nil {
+				//Add our player's character to the world
+				if player.Char == nil {
 					gender := loginData["gender"]
 					race := loginData["race"]
 					class := loginData["class"]
@@ -78,41 +78,41 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 					classData := character.GetClassByName(class)
 					if raceData == nil || classData == nil {
 						//We have a problem w/ the data files
-						//Return that message to the user and start over.
-						logger.Error("Unable to create a user because race or class data was invalid.")
+						//Return that message to the player and start over.
+						logger.Error("Unable to create a player because race or class data was invalid.")
 						s.sendToPlayer(pc, "Unable to create your character, the game files for your chosen class or race are invalid. Please try again.")
 						return
 					}
-					char := character.NewCharacter(user.Id, characterName, raceData.Id, classData.Id, gender) //TODO
-					user.Char = char
-					s.playerManager.UpdatePlayer(user)
+					char := character.NewCharacter(player.Id, characterName, raceData.Id, classData.Id, gender) //TODO
+					player.Char = char
+					s.playerManager.UpdatePlayer(player)
 				}
 				var roles []character.AdminRole = []character.AdminRole{}
 				//Reset their balances on re-entry
 				//I -don't- think this will be abusable on disconnects... we'd have to see
 				//If so i'll have to start storing balances in character files.
-				user.Char.ResetBalances()
-				//Map our user roles => character roles
+				player.Char.ResetBalances()
+				//Map our player roles => character roles
 				//TODO properly merge User & Character.
-				if user.IsAdmin() {
+				if player.IsAdmin() {
 					roles = append(roles, character.AdminRoleAdmin)
 				}
-				if user.IsBuilder() {
+				if player.IsBuilder() {
 					roles = append(roles, character.AdminRoleBuilder)
 				}
-				if user.IsOwner() {
+				if player.IsOwner() {
 					roles = append(roles, character.AdminRoleOwner)
 				}
 				if len(roles) > 0 {
-					user.Char.AdminCtx = character.NewAdminContext(roles...)
+					player.Char.AdminCtx = character.NewAdminContext(roles...)
 				}
-				user.SetConnection(pc)
-				s.worldManager.AddCharacter(user.Char, pc)
+				player.SetConnection(pc)
+				s.worldManager.AddCharacter(player.Char, pc)
 
 				loginData = nil
-				logger.GetLogger().LogPlayerConnect(user.Id, user.Username, pc.Conn.RemoteAddr().String())
+				logger.GetLogger().LogPlayerConnect(player.Id, player.Username, pc.Conn.RemoteAddr().String())
 
-				s.handlePlayerSession(user.Id, pc)
+				s.handlePlayerSession(player.Id, pc)
 				return //If we ever leave handlePlayerSession our defer will cleanup.
 			}
 
@@ -154,7 +154,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 
 		} else {
 			//Lookup the player
-			user, err := s.playerManager.GetPlayerByUsername(input)
+			player, err := s.playerManager.GetPlayerByUsername(input)
 			if err != nil {
 				//The username is not known.
 				//Tell them we don't know who that is, reshow the prompt
@@ -162,15 +162,15 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				return nil, false
 			}
 
-			pc.Username = user.Username
-			stateData["userid"] = fmt.Sprint(user.Id)
+			pc.Username = player.Username
+			stateData["playerid"] = fmt.Sprint(player.Id)
 			s.sendToPlayer(pc, "Enter your password.")
 			pc.SetState(connections.StatePassword)
 		}
 
 		return nil, false
 
-		//This is only called if they are -creating- a new user.
+		//This is only called if they are -creating- a new player.
 	case connections.StateUsername:
 		if input == "" {
 			//Just resend them the username question
@@ -180,7 +180,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		//Lookup the player
 		_, err := s.playerManager.GetPlayerByUsername(input)
 		if err != nil {
-			//New User
+			//New player
 			pc.Username = input
 			s.sendToPlayer(pc, s.templateManager.Colorize(
 				"Welcome new player! Please enter a password. \r\n$y[Passwords must be at least 6 characters long]$n",
@@ -196,29 +196,29 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		return nil, false //We haven't completed login
 
 	case connections.StatePassword:
-		userId, exists := stateData["userid"]
+		playerId, exists := stateData["playerid"]
 		if !exists {
 			//Should never get here but...
 			s.sendToPlayer(pc, usernamePrompt)
 			pc.SetState(connections.StateInitialPrompt)
 			return nil, false
 		}
-		userId64, err := strconv.ParseUint(userId, 10, 64)
+		playerId64, err := strconv.ParseUint(playerId, 10, 64)
 		if err != nil {
-			logger.Error("Some how we cannot parse our userId", "err", err)
+			logger.Error("Some how we cannot parse our playerId", "err", err)
 			s.sendToPlayer(pc, "There was an error, lets start over.")
 			s.sendToPlayer(pc, usernamePrompt)
 			pc.SetState(connections.StateInitialPrompt)
-			delete(stateData, "userid")
+			delete(stateData, "playerid")
 			return nil, false
 		}
 		//Finally, validate their password against their existing password.
-		if s.playerManager.ValidatePassword(input, userId64) {
+		if s.playerManager.ValidatePassword(input, playerId64) {
 			s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!\n", pc.Username))
-			//Verify they have a character on their user. If not make one.
+			//Verify they have a character on their player. If not make one.
 			ur, err := s.playerManager.GetPlayerByUsername(pc.Username)
 			if err != nil {
-				s.sendToPlayer(pc, "Unable to find your user file, please try again.")
+				s.sendToPlayer(pc, "Unable to find your player file, please try again.")
 				pc.SetState(connections.StateRejectedAuthentication)
 				return nil, false
 			}
@@ -227,7 +227,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 				return ur, true
 			}
 
-			//Ok, a user with no character. initiate character creation
+			//Ok, a portal with no character. initiate character creation
 			if err := sendGenderPrompt(pc, s, mudData); err != nil {
 				//there was an error we've already sent the error
 				// and set the state to cause us to leave

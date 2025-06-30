@@ -42,7 +42,7 @@ func (dr DisplayRoomListener) Handle(ctx *commands.CommandContext) commands.Comm
 		var others []string
 		for _, p := range room.GetPlayers() {
 			if ur, err := dr.playerManager.GetPlayerById(p); err == nil {
-				if ur.Id != disp.UserId {
+				if ur.Id != disp.PlayerId {
 					others = append(others, ur.Char.Name)
 				}
 			}
@@ -52,7 +52,7 @@ func (dr DisplayRoomListener) Handle(ctx *commands.CommandContext) commands.Comm
 		}
 	}
 
-	if player, err := dr.playerManager.GetPlayerById(disp.UserId); err == nil {
+	if player, err := dr.playerManager.GetPlayerById(disp.PlayerId); err == nil {
 		player.SendText(roomDesc)
 	}
 	return commands.Continue

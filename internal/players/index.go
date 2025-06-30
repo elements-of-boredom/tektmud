@@ -104,7 +104,7 @@ func (idx *PlayerIndex) Save() error {
 	for _, playername := range playernames {
 		playerId := idx.PlayersByName[playername]
 
-		//Write the UserId (8bytes)
+		//Write the PlayerId (8bytes)
 		if err := binary.Write(file, binary.LittleEndian, playerId); err != nil {
 			return fmt.Errorf("failed to write playerId: %w", err)
 		}
@@ -144,7 +144,7 @@ func (idx *PlayerIndex) Rebuild() error {
 	players := idx.scanForPlayerFiles()
 	idx.headerData.RecordCount = uint64(len(players))
 	idx.PlayersByName = players
-	idx.NextPlayerId = idx.getNextAvailableUserId()
+	idx.NextPlayerId = idx.getNextAvailablePlayerId()
 
 	data := IndexHeader{IndexVersion: IndexVersion, RecordCount: uint64(len(players))}
 	//Write header (16 bytes)
@@ -190,20 +190,20 @@ func (idx *PlayerIndex) Rebuild() error {
 	return nil
 }
 
-func (idx *PlayerIndex) getNextAvailableUserId() uint64 {
+func (idx *PlayerIndex) getNextAvailablePlayerId() uint64 {
 	if len(idx.PlayersByName) > 0 {
-		var maxUserId uint64 = 0
+		var maxPlayerId uint64 = 0
 		for _, i := range idx.PlayersByName {
-			if i > maxUserId {
-				maxUserId = i
+			if i > maxPlayerId {
+				maxPlayerId = i
 			}
 		}
-		return maxUserId + 1
+		return maxPlayerId + 1
 	}
 	return 1 //Start at 1, so we can use 0 for "system"
 }
 
-func (idx *PlayerIndex) UserIdByName(name string) (uint64, bool) {
+func (idx *PlayerIndex) PlayerIdByName(name string) (uint64, bool) {
 
 	id, exists := idx.PlayersByName[name]
 	return id, exists

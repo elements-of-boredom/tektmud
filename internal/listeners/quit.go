@@ -30,6 +30,6 @@ func (ql QuitListener) Handle(ctx *commands.CommandContext) commands.CommandResu
 		return commands.Continue
 	}
 
-	ql.Remover.RemoveCharacter(pq.UserId)
+	ql.Remover.RemoveCharacter(pq.PlayerId)
 	return commands.Continue
 }

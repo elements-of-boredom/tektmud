@@ -248,11 +248,11 @@ func (wm *WorldManager) HandleInput(characterId uint64, input string) error {
 	}
 
 	//Create a command type of Input
-	//Even though we don't queue user's we still feed it through the queue
+	//Even though we don't queue player's we still feed it through the queue
 	//incase something else cares about the action as well.
 	commands.QueueGameCommand(characterId, commands.Input{
-		UserId: characterId,
-		Text:   input,
+		PlayerId: characterId,
+		Text:     input,
 	})
 
 	/*
