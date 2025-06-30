@@ -5,27 +5,27 @@ import (
 	"tektmud/internal/commands"
 	"tektmud/internal/connections"
 	"tektmud/internal/logger"
+	"tektmud/internal/players"
 	"tektmud/internal/rooms"
 	"tektmud/internal/templates"
-	"tektmud/internal/users"
 )
 
 type MessageListener struct {
-	areaManager *rooms.AreaManager
-	userManager *users.UserManager
-	pcs         map[uint64]*connections.PlayerConnection
-	tmpl        *templates.TemplateManager
+	areaManager   *rooms.AreaManager
+	playerManager *players.PlayerManager
+	pcs           map[uint64]*connections.PlayerConnection
+	tmpl          *templates.TemplateManager
 }
 
 func NewMessageListener(am *rooms.AreaManager,
-	um *users.UserManager,
+	pm *players.PlayerManager,
 	c map[uint64]*connections.PlayerConnection,
 	template *templates.TemplateManager) *MessageListener {
 	return &MessageListener{
-		areaManager: am,
-		userManager: um,
-		pcs:         c,
-		tmpl:        template,
+		areaManager:   am,
+		playerManager: pm,
+		pcs:           c,
+		tmpl:          template,
 	}
 }
 
@@ -67,7 +67,7 @@ func (il MessageListener) Handle(ctx *commands.CommandContext) commands.CommandR
 				}
 			}
 
-			if user, err := il.userManager.GetUserById(userId); err == nil {
+			if user, err := il.playerManager.GetPlayerById(userId); err == nil {
 				/* TODO
 				if msg.IsCommunication && user.IsDeaf {
 					continue

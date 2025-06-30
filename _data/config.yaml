@@ -9,7 +9,7 @@ server:
   log_level: "Debug"
 paths:
   root_data_dir: "_data"
-  user_data : "users"
+  player_data : "players"
   world_files: "world"
   localization: "localization"
   logs: "logs"

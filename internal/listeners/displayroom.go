@@ -4,24 +4,24 @@ import (
 	"strings"
 	"tektmud/internal/commands"
 	"tektmud/internal/logger"
+	"tektmud/internal/players"
 	"tektmud/internal/rooms"
 	"tektmud/internal/templates"
-	"tektmud/internal/users"
 )
 
 type DisplayRoomListener struct {
-	areaManager *rooms.AreaManager
-	userManager *users.UserManager
-	tmpl        *templates.TemplateManager
+	areaManager   *rooms.AreaManager
+	playerManager *players.PlayerManager
+	tmpl          *templates.TemplateManager
 }
 
 func NewDisplayRoomListener(am *rooms.AreaManager,
-	um *users.UserManager,
+	pm *players.PlayerManager,
 	template *templates.TemplateManager) *DisplayRoomListener {
 	return &DisplayRoomListener{
-		areaManager: am,
-		userManager: um,
-		tmpl:        template,
+		areaManager:   am,
+		playerManager: pm,
+		tmpl:          template,
 	}
 }
 
@@ -41,7 +41,7 @@ func (dr DisplayRoomListener) Handle(ctx *commands.CommandContext) commands.Comm
 	if room := rooms.LoadRoom(areaId, roomId); room != nil {
 		var others []string
 		for _, p := range room.GetPlayers() {
-			if ur, err := dr.userManager.GetUserById(p); err == nil {
+			if ur, err := dr.playerManager.GetPlayerById(p); err == nil {
 				if ur.Id != disp.UserId {
 					others = append(others, ur.Char.Name)
 				}
@@ -52,8 +52,8 @@ func (dr DisplayRoomListener) Handle(ctx *commands.CommandContext) commands.Comm
 		}
 	}
 
-	if user, err := dr.userManager.GetUserById(disp.UserId); err == nil {
-		user.SendText(roomDesc)
+	if player, err := dr.playerManager.GetPlayerById(disp.UserId); err == nil {
+		player.SendText(roomDesc)
 	}
 	return commands.Continue
 }

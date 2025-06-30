@@ -10,7 +10,7 @@ import (
 	configs "tektmud/internal/config"
 	"tektmud/internal/connections"
 	"tektmud/internal/logger"
-	"tektmud/internal/users"
+	"tektmud/internal/players"
 	"time"
 )
 
@@ -85,7 +85,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 					}
 					char := character.NewCharacter(user.Id, characterName, raceData.Id, classData.Id, gender) //TODO
 					user.Char = char
-					s.userManager.UpdateUser(user)
+					s.playerManager.UpdatePlayer(user)
 				}
 				var roles []character.AdminRole = []character.AdminRole{}
 				//Reset their balances on re-entry
@@ -123,7 +123,7 @@ func (s *MudServer) handlePlayerLogin(pc *connections.PlayerConnection) {
 	}
 }
 
-func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]string) (*users.UserRecord, bool) {
+func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input string, stateData map[string]string) (*players.PlayerRecord, bool) {
 
 	//see if at any point they entered "quit"
 	if strings.ToLower(input) == `quit` {
@@ -154,7 +154,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 
 		} else {
 			//Lookup the player
-			user, err := s.userManager.GetUserByUsername(input)
+			user, err := s.playerManager.GetPlayerByUsername(input)
 			if err != nil {
 				//The username is not known.
 				//Tell them we don't know who that is, reshow the prompt
@@ -178,7 +178,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			return nil, false
 		}
 		//Lookup the player
-		_, err := s.userManager.GetUserByUsername(input)
+		_, err := s.playerManager.GetPlayerByUsername(input)
 		if err != nil {
 			//New User
 			pc.Username = input
@@ -213,10 +213,10 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 			return nil, false
 		}
 		//Finally, validate their password against their existing password.
-		if s.userManager.ValidatePassword(input, userId64) {
+		if s.playerManager.ValidatePassword(input, userId64) {
 			s.sendToPlayer(pc, fmt.Sprintf("Welcome back, %s!\n", pc.Username))
 			//Verify they have a character on their user. If not make one.
-			ur, err := s.userManager.GetUserByUsername(pc.Username)
+			ur, err := s.playerManager.GetPlayerByUsername(pc.Username)
 			if err != nil {
 				s.sendToPlayer(pc, "Unable to find your user file, please try again.")
 				pc.SetState(connections.StateRejectedAuthentication)
@@ -257,7 +257,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 
 	case connections.StateNewPassword:
 		//Validate the user's password. For now we are gonna auto-pass
-		valid := s.userManager.PasswordMeetsMinimums(input, pc.Username)
+		valid := s.playerManager.PasswordMeetsMinimums(input, pc.Username)
 		if !valid {
 			s.sendToPlayer(pc, "Passwords must be at least 6 characters, and cannot be your username.\r\nChoose a password:")
 			return nil, false
@@ -285,7 +285,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 	case connections.StateCollectEmail:
 		passString := stateData["password"]
 
-		ur, err := s.userManager.CreateUser(pc.Username, passString, input)
+		ur, err := s.playerManager.CreatePlayer(pc.Username, passString, input)
 		if err != nil {
 			s.sendToPlayer(pc, "Error creating player, please try again.")
 			pc.SetState(connections.StateRejectedAuthentication)
@@ -366,11 +366,10 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 
 			//TODO address nil pointer derefernce risk
 			info := map[string]string{
-				"Force":   fmt.Sprint(statData.Force),
-				"Reflex":  fmt.Sprint(statData.Reflex),
-				"Acuity":  fmt.Sprint(statData.Acuity),
-				"Insight": fmt.Sprint(statData.Insight),
-				"Heart":   fmt.Sprint(statData.Heart),
+				"Force":  fmt.Sprint(statData.Force),
+				"Reflex": fmt.Sprint(statData.Reflex),
+				"Acuity": fmt.Sprint(statData.Acuity),
+				"Heart":  fmt.Sprint(statData.Heart),
 			}
 
 			tpl, err := s.templateManager.Process(fmt.Sprintf("creation/races/%s", strings.ToLower(race)), info)
@@ -435,7 +434,7 @@ func (s *MudServer) processLoginInput(pc *connections.PlayerConnection, input st
 		}
 
 		if character.ValidateCharacterName(input) {
-			ur, err := s.userManager.GetUserByUsername(pc.Username)
+			ur, err := s.playerManager.GetPlayerByUsername(pc.Username)
 			if err != nil {
 				s.sendToPlayer(pc, "Error creating player, please try again.")
 				pc.SetState(connections.StateRejectedAuthentication)

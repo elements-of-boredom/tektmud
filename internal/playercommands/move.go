@@ -1,25 +1,25 @@
-package usercommands
+package playercommands
 
 import (
 	"fmt"
 	"tektmud/internal/character"
+	"tektmud/internal/players"
 	"tektmud/internal/rooms"
-	"tektmud/internal/users"
 )
 
-func Move(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
+func Move(args string, player *players.PlayerRecord, room *rooms.Room) (bool, error) {
 
 	if len(args) == 0 {
-		return false, fmt.Errorf("received a move command with no direction user:%v, room:%v", user.Id, room.Id)
+		return false, fmt.Errorf("received a move command with no direction user:%v, room:%v", player.Id, room.Id)
 	}
 	//Check movement balance
-	if !user.Char.Balance.HasBalance(character.MovementBalance) {
-		user.SendText("You must wait before moving again.")
+	if !player.Char.Balance.HasBalance(character.MovementBalance) {
+		player.SendText("You must wait before moving again.")
 		return true, nil
 	}
 
 	if exit := room.FindExit(args); exit != nil {
-		areaId, roomId := user.Char.GetLocation()
+		areaId, roomId := player.Char.GetLocation()
 
 		//Parse the target destination
 		destAreaId := areaId
@@ -44,21 +44,26 @@ func Move(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
 			enterFromDirection = "ether"
 		}
 
-		if err := rooms.MoveToRoom(user.Char, room, dest); err != nil {
-			user.SendText("Unable to move into that room.")
+		//Before we send them to the room we need to attempt to Setup()
+		//this ensures everything in the room is there before entering.
+
+		dest.Setup()
+
+		if err := rooms.MoveToRoom(player.Char, room, dest); err != nil {
+			player.SendText("Unable to move into that room.")
 		} else {
-			user.Char.Balance.UseBalance(character.MovementBalance)
+			player.Char.Balance.UseBalance(character.MovementBalance)
 			//Notify everyone in the current room they left.
 			room.SendText(
-				fmt.Sprintf("%s leaves to the %s", user.Char.Name, string(exit.Direction)),
-				user.Id)
+				fmt.Sprintf("%s leaves to the %s", player.Char.Name, string(exit.Direction)),
+				player.Id)
 
 			//Notify everyone in the new room they are entering
 			dest.SendText(
-				fmt.Sprintf("%s enters from the %s ", user.Char.Name, enterFromDirection),
-				user.Id)
+				fmt.Sprintf("%s enters from the %s ", player.Char.Name, enterFromDirection),
+				player.Id)
 
-			dest.ShowRoom(user.Id)
+			dest.ShowRoom(player.Id)
 		}
 
 		return true, nil
@@ -67,7 +72,7 @@ func Move(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
 	//exit was nil. so they are attempting to go somewhere thats not valid for the room.
 	//This can happen by typing "n" in a room w/ no north exit, OR if the user is blinded we want them
 	//to have to guess.
-	user.SendText("You cannot go in that direction.\n")
+	player.SendText("You cannot go in that direction.\n")
 
 	//We handled this command (even though it failed), send back true
 	return true, nil

@@ -88,6 +88,14 @@ func GetRaceByName(name string) *Race {
 	return race
 }
 
+func GetRaceNameById(id int) string {
+	race, exists := RacesById[id]
+	if !exists {
+		return "Invalid RaceId"
+	}
+	return race.Name
+}
+
 func GetStatsForRace(name string) *Stats {
 	race := GetRaceByName(name)
 	if race == nil {

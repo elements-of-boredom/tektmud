@@ -8,7 +8,7 @@ import (
 // Represents the different permission levels
 type AdminRole string
 
-// TODO : Convert to flags, a user could be multiple roles, and admin != builder, but an admin COULD be a builder.
+// TODO : Convert to flags, a player could be multiple roles, and admin != builder, but an admin COULD be a builder.
 const (
 	AdminRoleNone    AdminRole = ""
 	AdminRoleBuilder AdminRole = "builder" //can create/edit rooms & areas

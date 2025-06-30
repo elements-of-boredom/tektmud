@@ -231,6 +231,10 @@ func LoadRoom(areaId, roomId string) *Room {
 	}
 }
 
+func (r *Room) Setup() {
+
+}
+
 func MoveToRoom(user *character.Character, origin *Room, destination *Room) error {
 
 	RemoveFromRoom(user.Id, origin.AreaId, origin.Id)

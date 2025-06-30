@@ -1,6 +1,6 @@
 .vscode
 private-notes.txt
-_data/**/users/*
+_data/**/players/*
 _data/**/plugin-data/*
 _data/logs/*
 **/config-overrides.yaml

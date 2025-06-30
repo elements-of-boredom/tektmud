@@ -18,8 +18,5 @@ Reflex: Controls your ability to avoid incoming damage through dodging,
     positioning, and quick reactions.
 Acuity: Represents your mana pool, and governs both your technical proficiency
     with complex systems and your magical/psionic damage potential.
-Insight: Provides psychological and mental resilience, increases the speed in
-    which you learn, and enhances your interactions with creatures throughout
-    {{ .WorldName }}.
 Heart: Represents your health pool, physical resilience, and overall 
     endurance for surviving damage and extended activities. 

@@ -3,7 +3,6 @@ package world
 import (
 	"strings"
 	"tektmud/internal/character"
-	"tektmud/internal/logger"
 )
 
 // InputHandler defines the interface for command handlers
@@ -47,24 +46,7 @@ func (h BaseHandler) Name() string  { return h.name }
 func (h BaseHandler) Priority() int { return h.priority }
 
 func ProcessInput(character *character.Character, rawInput string, world *WorldManager) error {
-	ctx := ParseInput(character, rawInput, world)
-
-	// Process through handler chain
-	// This is where we validate player commands etc
-	for _, handlerName := range character.Handlers {
-		if handler, exists := world.inputHandlers[handlerName]; exists {
-			result, err := handler.Handle(ctx)
-			if err != nil {
-				return err
-			}
-			if result == HandlerStop || result == HandlerError {
-				break
-			}
-		} else {
-			logger.Error("Unable to find handler by name", "name", handlerName)
-		}
-
-	}
+	//ctx := ParseInput(character, rawInput, world)
 
 	return nil
 }

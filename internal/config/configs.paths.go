@@ -2,7 +2,7 @@ package configs
 
 type Paths struct {
 	RootDataDir  string `yaml:"root_data_dir"`
-	UserData     string `yaml:"user_data"`
+	PlayerData   string `yaml:"player_data"`
 	WorldFiles   string `yaml:"world_files"`
 	Localization string `yaml:"localization"`
 	Logs         string `yaml:"logs"`
@@ -13,8 +13,8 @@ type Paths struct {
 
 func (p *Paths) Check() {
 
-	if p.UserData == `` {
-		p.UserData = `user_data`
+	if p.PlayerData == `` {
+		p.PlayerData = `player_data`
 	}
 
 	if p.WorldFiles == `` {

@@ -1,17 +1,17 @@
-package usercommands
+package playercommands
 
 import (
 	"strings"
+	"tektmud/internal/players"
 	"tektmud/internal/rooms"
 	"tektmud/internal/templates"
-	"tektmud/internal/users"
 )
 
-func Templates(args string, user *users.UserRecord, room *rooms.Room) (bool, error) {
+func Templates(args string, player *players.PlayerRecord, room *rooms.Room) (bool, error) {
 
 	//Reload them all
 	if len(args) == 0 {
-		user.SendText("Syntax for templates: templates <clear> <all|name>")
+		player.SendText("Syntax for templates: templates <clear> <all|name>")
 		return true, nil
 	}
 

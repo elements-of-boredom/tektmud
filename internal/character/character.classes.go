@@ -69,6 +69,14 @@ func GetClassById(id int) *CharacterClass {
 	return c
 }
 
+func GetClassNameById(id int) string {
+	c, exists := classesById[id]
+	if !exists {
+		return "Unknown ClassId"
+	}
+	return c.Name
+}
+
 func GetClassByName(name string) *CharacterClass {
 	c, exists := classesByName[strings.ToLower(name)]
 	if !exists {

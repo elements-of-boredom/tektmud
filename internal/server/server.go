@@ -13,8 +13,8 @@ import (
 	"tektmud/internal/connections"
 	"tektmud/internal/language"
 	"tektmud/internal/logger"
+	"tektmud/internal/players"
 	"tektmud/internal/templates"
-	"tektmud/internal/users"
 	"tektmud/internal/world"
 	"time"
 )
@@ -23,7 +23,7 @@ import (
 type MudServer struct {
 	config            *configs.Config
 	connectionManager *connections.ConnectionManager
-	userManager       *users.UserManager
+	playerManager     *players.PlayerManager
 	worldManager      *world.WorldManager
 	templateManager   *templates.TemplateManager
 	listeners         []net.Listener
@@ -39,11 +39,11 @@ func NewMudServer() (*MudServer, error) {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	//initialize our UserManager
-	userDir := filepath.Join(config.Paths.RootDataDir, config.Paths.UserData)
-	userManager, err := users.NewUserManager("users.idx", userDir)
+	playerDir := filepath.Join(config.Paths.RootDataDir, config.Paths.PlayerData)
+	playerManager, err := players.NewPlayerManager("players.idx", playerDir)
 	if err != nil {
 		cancel()
-		return nil, fmt.Errorf("failed to create a usermanager: %w", err)
+		return nil, fmt.Errorf("failed to create a playerManager: %w", err)
 	}
 
 	connMgr, err := connections.NewConnectionManager(&config)
@@ -59,7 +59,7 @@ func NewMudServer() (*MudServer, error) {
 	tm := templates.Initialize() //make sure Templates are setup.
 
 	//bootup our world manager
-	wm := world.NewWorldManager(userManager, tm)
+	wm := world.NewWorldManager(playerManager, tm)
 	if err := wm.Initialize(); err != nil {
 		//We need to bail if this errored.
 		cancel()
@@ -70,7 +70,7 @@ func NewMudServer() (*MudServer, error) {
 	server := &MudServer{
 		config:            &config,
 		connectionManager: connMgr,
-		userManager:       userManager,
+		playerManager:     playerManager,
 		templateManager:   tm,
 		worldManager:      wm,
 		ctx:               ctx,

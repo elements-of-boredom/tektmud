@@ -5,17 +5,17 @@ import (
 	"strings"
 	"tektmud/internal/commands"
 	"tektmud/internal/logger"
+	"tektmud/internal/playercommands"
+	"tektmud/internal/players"
 	"tektmud/internal/rooms"
-	"tektmud/internal/usercommands"
-	"tektmud/internal/users"
 )
 
 type InputListener struct {
 	areaManager *rooms.AreaManager
-	userManager *users.UserManager
+	userManager *players.PlayerManager
 }
 
-func NewInputListener(am *rooms.AreaManager, um *users.UserManager) *InputListener {
+func NewInputListener(am *rooms.AreaManager, um *players.PlayerManager) *InputListener {
 	return &InputListener{
 		areaManager: am,
 		userManager: um,
@@ -34,7 +34,7 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 
 	//Check to see if we are ignoring commands for this user.
 	//If so pitch it.
-	user, err := il.userManager.GetUserById(input.UserId)
+	user, err := il.userManager.GetPlayerById(input.UserId)
 	if err != nil {
 		logger.Error("User not found", "UserId", input.UserId, "err", err)
 		return commands.Continue
@@ -66,14 +66,14 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 			cmd = `move`
 		}
 
-		cmdHandler, ok := usercommands.UserHandlers[cmd]
+		cmdHandler, ok := playercommands.PlayerHandlers[cmd]
 		if ok {
 
 			arguments := strings.Replace(input.Text, fmt.Sprintf("%s ", cmd), "", 1)
 
 			//If this is an admin command and they aren't an admin just act like we dont
 			//know this command exists.
-			if cmdHandler.IsAdminCommand && !user.HasRole(users.RoleAdmin) {
+			if cmdHandler.IsAdminCommand && !user.HasRole(players.RoleAdmin) {
 				logger.Warn("User attempted admin command but is not an Admin", "userId", user.Id, "cmd", cmd, "args", fmt.Sprintf("[%s]", arguments))
 				//TODO do we tell the user we failed here?
 				return commands.Continue

@@ -16,7 +16,6 @@ stats:
   force: 11
   reflex: 10
   acuity: 12
-  insight: 12
   heart: 15
 resistances:
   fire: 0

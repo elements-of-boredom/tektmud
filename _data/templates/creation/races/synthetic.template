@@ -7,9 +7,9 @@ advantages. Despite their artificial bodies, they maintain fully human
 personalities and desires, though many believe the process strips them
 of the natural intuition humans have.
 
-Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
+Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Heart" }}
 {{ repeat 60 "-" }}
-      {{ pad 10 .Force }}{{ pad 10 .Reflex }}{{ pad 10 .Acuity }}{{ pad 10 .Insight }}{{ pad 10 .Heart }}
+      {{ pad 10 .Force }}{{ pad 10 .Reflex }}{{ pad 10 .Acuity }}{{ pad 10 .Heart }}
 
 Racial Bonus: 
   - Immune to suffocation.

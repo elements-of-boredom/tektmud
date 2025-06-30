@@ -12,9 +12,9 @@ import (
 	"tektmud/internal/connections"
 	"tektmud/internal/listeners"
 	"tektmud/internal/logger"
+	"tektmud/internal/players"
 	"tektmud/internal/rooms"
 	"tektmud/internal/templates"
-	"tektmud/internal/users"
 	"time"
 )
 
@@ -32,13 +32,13 @@ type QueuedInput struct {
 }
 
 type WorldManager struct {
-	Config      *WorldConfig
-	tickManager TickManager
-	userManager *users.UserManager
-	areaManager *rooms.AreaManager
-	tmpl        *templates.TemplateManager
-	characters  map[uint64]*character.Character          //CharacterId => Character
-	connections map[uint64]*connections.PlayerConnection //CharacterId => PlayerConnection
+	Config        *WorldConfig
+	tickManager   TickManager
+	playerManager *players.PlayerManager
+	areaManager   *rooms.AreaManager
+	tmpl          *templates.TemplateManager
+	characters    map[uint64]*character.Character          //CharacterId => Character
+	connections   map[uint64]*connections.PlayerConnection //CharacterId => PlayerConnection
 
 	inputHandlers    map[string]InputHandler //InputHandler.Id => InputHandler
 	commandProcessor *commands.QueueProcessor
@@ -55,7 +55,7 @@ type WorldManager struct {
 	mu sync.RWMutex
 }
 
-func NewWorldManager(um *users.UserManager, tm *templates.TemplateManager) *WorldManager {
+func NewWorldManager(pm *players.PlayerManager, tm *templates.TemplateManager) *WorldManager {
 	c := configs.GetConfig()
 
 	wc := &WorldConfig{
@@ -68,7 +68,7 @@ func NewWorldManager(um *users.UserManager, tm *templates.TemplateManager) *Worl
 		Config:           wc,
 		tickManager:      *NewTickManager(),
 		commandProcessor: commands.NewQueueProcessor(wc.TickRate),
-		userManager:      um,
+		playerManager:    pm,
 		tmpl:             tm,
 		characters:       make(map[uint64]*character.Character),
 		connections:      make(map[uint64]*connections.PlayerConnection),
@@ -102,9 +102,9 @@ func (wm *WorldManager) Initialize() error {
 func (wm *WorldManager) registerListeners() {
 
 	//Register our input listener
-	var inputListener = listeners.NewInputListener(wm.areaManager, wm.userManager)
-	var messageListener = listeners.NewMessageListener(wm.areaManager, wm.userManager, wm.connections, wm.tmpl)
-	var displayRoomListener = listeners.NewDisplayRoomListener(wm.areaManager, wm.userManager, wm.tmpl)
+	var inputListener = listeners.NewInputListener(wm.areaManager, wm.playerManager)
+	var messageListener = listeners.NewMessageListener(wm.areaManager, wm.playerManager, wm.connections, wm.tmpl)
+	var displayRoomListener = listeners.NewDisplayRoomListener(wm.areaManager, wm.playerManager, wm.tmpl)
 	var quitListener = listeners.NewQuitListener(wm)
 
 	commands.RegisteredListener(inputListener, commands.Input{}.Name())
@@ -347,8 +347,8 @@ func (wm *WorldManager) RemoveCharacter(characterId uint64) {
 		r.SendText(character.Name+" has left the game.", characterId)
 	}
 
-	// Save character state (facade)
-	//wm.userManager.SaveUser(character)
+	// Save character state (facade) TODO:
+	//wm.playerManager.SavePlayer(character)
 
 	// Remove from world
 	wm.mu.Lock()

@@ -6,8 +6,7 @@ $2|$n {{ padRight 9 "Age" }}: {{ padRight 12 .Age }}{{ padRight 9 "Birthdate"}}:
 |$n {{ padRight 9 "XP Rank" }}: {{ padRight 24 "877"}}{{ padRight 12 "Explorer Rank"}}:{{ padRight 27 "720"}}$2|
 +-$yVitals$2{{ repeat 70 "-" }}+
 |$n {{ padRight 9 "Health" }}: {{ padRight 12 "4272/3500"}}{{ padRight 9 "Willpower"}}: {{ padRight 13 "13200/13200"}}{{ padRight 8 "Force"}}: {{ .Force }}  {{ padRight 8 "Reflex"}}: {{ .Reflex }}   $2|
-|$n {{ padRight 9 "Mana" }}: {{ padRight 12 "4216/3850"}}{{ padRight 9 "Endurance" }}: {{ padRight 13 "13200/13200"}}{{ padRight 8 "Acuity"}}: {{ .Acuity }}  {{ padRight 8 "Insight"}}: {{ .Insight }}   $2|
-|$n {{ repeat 47 " " }}{{ padRight 8 "Heart"}}: {{ .Heart }}{{ padRight 17 " "}}$2|
+|$n {{ padRight 9 "Mana" }}: {{ padRight 12 "4216/3850"}}{{ padRight 9 "Endurance" }}: {{ padRight 13 "13200/13200"}}{{ padRight 8 "Acuity"}}: {{ .Acuity }}  {{ padRight 8 "Heart"}}: {{ .Heart }}   $2|
 |$n{{ repeat 77 " " }}$2|
 |$n Hunger  : reasonably full                    Sobriety : completely sober    $2|
 |$n Timeout : 10 minutes                                                        $2|

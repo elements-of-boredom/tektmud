@@ -7,9 +7,9 @@ but are able to project sound when they wish. Rarely seen unless they
 choose to be, their otherworldly nature makes them excellent at 
 stealth and espionage operations.
 
-Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Insight" }}{{ pad 10 "Heart" }}
+Stats:{{ pad 10 "Force" }}{{ pad 10 "Reflex" }}{{ pad 10 "Acuity" }}{{ pad 10 "Heart" }}
 {{ repeat 60 "-" }}
-      {{ pad 10 .Force }}{{ pad 10 .Reflex }}{{ pad 10 .Acuity }}{{ pad 10 .Insight }}{{ pad 10 .Heart }}
+      {{ pad 10 .Force }}{{ pad 10 .Reflex }}{{ pad 10 .Acuity }}{{ pad 10 .Heart }}
 
 Racial Bonus: 
   - Grants the ability to PHASE without training.

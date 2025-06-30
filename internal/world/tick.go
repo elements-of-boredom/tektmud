@@ -134,7 +134,7 @@ func (tm *TickManager) ProcessTick(wm *WorldManager) {
 
 	//Update balances for characters
 	for _, c := range wm.characters {
-		p, err := wm.userManager.GetUserById(c.Id)
+		p, err := wm.playerManager.GetPlayerById(c.Id)
 		if err != nil {
 			continue
 		}

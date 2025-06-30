@@ -1,16 +1,14 @@
 package character
 
 import (
-	"slices"
 	"time"
 )
 
 type Stats struct {
-	Force   int `yaml:"force"`
-	Reflex  int `yaml:"reflex"`
-	Acuity  int `yaml:"acuity"`
-	Insight int `yaml:"insight"`
-	Heart   int `yaml:"heart"`
+	Force  int `yaml:"force"`
+	Reflex int `yaml:"reflex"`
+	Acuity int `yaml:"acuity"`
+	Heart  int `yaml:"heart"`
 }
 
 type Character struct {
@@ -27,7 +25,6 @@ type Character struct {
 	RoomId string `yaml:"room_id"`
 	AreaId string `yaml:"area_id"`
 
-	Handlers []string
 	AdminCtx *AdminContext
 
 	// Persistence facade - these would be saved/loaded
@@ -44,7 +41,6 @@ func NewCharacter(id uint64, name string, raceId, classId int, gender string) *C
 		Stats:    RacesById[raceId].Stats,
 		ClassId:  classId,
 		Gender:   gender,
-		Handlers: make([]string, 0),
 		AdminCtx: nil, // No admin rights by default
 	}
 
@@ -58,16 +54,6 @@ func (c *Character) ResetBalances() {
 	c.Balance.SetCooldown(PhysicalBalance, 2*time.Second)
 	c.Balance.SetCooldown(MentalBalance, 2*time.Second)
 	c.Balance.SetCooldown(MovementBalance, 100*time.Millisecond)
-}
-
-func (c *Character) AddHandler(name string) {
-	c.Handlers = append(c.Handlers, name)
-}
-
-func (c *Character) RemoveHandler(name string) {
-	c.Handlers = slices.DeleteFunc(c.Handlers, func(n string) bool {
-		return n == name
-	})
 }
 
 func (c *Character) SetLocation(areaId, roomId string) {
