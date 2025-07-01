@@ -1,6 +1,7 @@
 package character
 
 import (
+	"fmt"
 	"strings"
 	"time"
 )
@@ -111,6 +112,18 @@ func (c *Character) GetLocation() (areaId string, roomId string) {
 }
 func (c *Character) GetAdminContext() *AdminContext {
 	return c.AdminCtx
+}
+func (c *Character) GetPromptString() string {
+	//TODO: Let users configure this
+	balanceString := ""
+	if c.Balance.HasBalance(PhysicalBalance) {
+		balanceString = "x"
+	}
+	if c.Balance.HasBalance(MentalBalance) {
+		balanceString = fmt.Sprintf("e%s", balanceString)
+	}
+
+	return fmt.Sprintf("%dh, %dm, %de, %dw %s-", c.Hp, c.Mana, c.Endurance, c.Willpower, balanceString)
 }
 
 // Apply damage calculates the effect of an attack

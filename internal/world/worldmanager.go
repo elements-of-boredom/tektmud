@@ -103,6 +103,7 @@ func (wm *WorldManager) registerListeners() {
 
 	//Register our input listener
 	var inputListener = listeners.NewInputListener(wm.areaManager, wm.playerManager)
+	var promptListener = listeners.NewPromptListener(wm.playerManager)
 	var messageListener = listeners.NewMessageListener(wm.areaManager, wm.playerManager, wm.connections, wm.tmpl)
 	var displayRoomListener = listeners.NewDisplayRoomListener(wm.areaManager, wm.playerManager, wm.tmpl)
 	var quitListener = listeners.NewQuitListener(wm)
@@ -111,6 +112,7 @@ func (wm *WorldManager) registerListeners() {
 	commands.RegisteredListener(messageListener, commands.Message{}.Name())
 	commands.RegisteredListener(displayRoomListener, commands.DisplayRoom{}.Name())
 	commands.RegisteredListener(quitListener, commands.PlayerQuit{}.Name())
+	commands.RegisteredListener(promptListener, commands.SendPrompt{}.Name())
 
 }
 
@@ -311,6 +313,7 @@ func (wm *WorldManager) AddCharacter(character *character.Character, conn *conne
 		// Announce arrival to room (except to the character themselves)
 		r.SendText(character.Name+" has entered the game.", character.Id)
 	}
+	commands.QueueGameCommand(character.Id, commands.SendPrompt{PlayerId: character.Id})
 
 	log.Printf("Character %s entered the world at %s:%s", character.Name, areaId, roomId)
 	return nil

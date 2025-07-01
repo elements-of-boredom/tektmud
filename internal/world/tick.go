@@ -143,6 +143,7 @@ func (tm *TickManager) ProcessTick(wm *WorldManager) {
 			for _, balanceMessage := range bals {
 				p.SendText(wm.tmpl.Colorize(balanceMessage+"$n\n", false))
 			}
+			p.SendPrompt()
 		}
 	}
 

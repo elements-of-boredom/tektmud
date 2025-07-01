@@ -45,6 +45,10 @@ func (ur *PlayerRecord) SetConnection(c *connections.PlayerConnection) {
 	ur.conn = c
 }
 
+func (pr *PlayerRecord) SendPrompt() {
+	pr.SendText(pr.Char.GetPromptString() + "\n")
+}
+
 func (ur *PlayerRecord) SendText(input string) {
 	//Enqueue message
 	if ur.conn != nil {

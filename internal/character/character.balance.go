@@ -71,7 +71,7 @@ func (b *Balance) GetAndRestoreBalances() []string {
 			case MentalBalance:
 				balanceMessage = append(balanceMessage, "$6You have recovered your mental equilibrium.")
 			}
-			//delete(b.balances, k) //Cant delete or we lose default balance time. Maybe thats ok.
+			delete(b.balances, k) //Cant delete or we lose default balance time. Maybe thats ok.
 		}
 	}
 	return balanceMessage

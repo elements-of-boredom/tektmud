@@ -19,6 +19,13 @@ type Message struct {
 // Command interface
 func (m Message) Name() string { return `Message` }
 
+type SendPrompt struct {
+	PlayerId uint64 //Target
+}
+
+// Command interface
+func (sp SendPrompt) Name() string { return `SendPrompt` }
+
 type DisplayRoom struct {
 	PlayerId uint64 //Target
 	RoomKey  string

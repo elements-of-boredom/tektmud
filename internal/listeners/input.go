@@ -95,10 +95,14 @@ func (il InputListener) Handle(ctx *commands.CommandContext) commands.CommandRes
 		//Throw the "huh?" equivalent
 		if !handled {
 			player.SendText(fmt.Sprintf("%s is not a valid command.", cmd))
+			//Send the prompt
+			player.SendPrompt()
 		}
-
+		//Put the prompt into the game queue to send This will send it after the other actions.
+		commands.QueueGameCommand(player.Id, commands.SendPrompt{PlayerId: input.PlayerId})
 	} else {
 		//They just hit enter... Resend the prompt for now
+		player.SendPrompt()
 	}
 
 	return commands.Continue
