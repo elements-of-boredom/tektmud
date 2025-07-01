@@ -23,6 +23,7 @@ var (
 		//Admin commands
 		`templates`: {Templates, true},
 		`tb`:        {TestBalance, true},
+		`doto`:      {DoTo, true},
 	}
 )
 

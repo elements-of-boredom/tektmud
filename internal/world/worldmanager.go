@@ -341,14 +341,19 @@ func (wm *WorldManager) RemoveCharacter(characterId uint64) {
 		return
 	}
 
+	player, err := wm.playerManager.GetPlayerById(characterId)
+	if err != nil {
+		logger.Error("Unable to find player with character id", "name", character.Name, "id", characterId)
+	} else {
+		// Save character state (facade) TODO:
+		wm.playerManager.UpdatePlayer(player)
+	}
+
 	// Announce departure
 	areaID, roomID := character.GetLocation()
 	if r, exists := wm.areaManager.GetRoom(areaID, roomID); exists {
 		r.SendText(character.Name+" has left the game.", characterId)
 	}
-
-	// Save character state (facade) TODO:
-	//wm.playerManager.SavePlayer(character)
 
 	// Remove from world
 	wm.mu.Lock()

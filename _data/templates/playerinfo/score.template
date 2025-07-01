@@ -1,12 +1,12 @@
 $2+-$y{{ padRight 76 .Name "-" "$2"}}$2+$n
-$2|$n {{ padRight 9 "Level" }}: {{ padRight 65 "64 (1%)" }}$2|$n
+$2|$n {{ padRight 9 "Level" }}: {{ padRight 65 .Level }}$2|$n
 $2|$n {{ padRight 9 "Age" }}: {{ padRight 12 .Age }}{{ padRight 9 "Birthdate"}}: {{ padRight 24 "3rd Lupar, 959AF" }}Class: {{padRight 11 .Class}}$2|
 |$n {{ padRight 9 "Gender" }}: {{ padRight 12 .Gender }}{{ padRight 9 "Race"}}: {{ padRight 24 .Race }}{{ padRight 18 "Fledgling"}}$2|
 |$n{{ padRight 77 " " }}$2|
 |$n {{ padRight 9 "XP Rank" }}: {{ padRight 24 "877"}}{{ padRight 12 "Explorer Rank"}}:{{ padRight 27 "720"}}$2|
 +-$yVitals$2{{ repeat 70 "-" }}+
-|$n {{ padRight 9 "Health" }}: {{ padRight 12 "4272/3500"}}{{ padRight 9 "Willpower"}}: {{ padRight 13 "13200/13200"}}{{ padRight 8 "Force"}}: {{ .Force }}  {{ padRight 8 "Reflex"}}: {{ .Reflex }}   $2|
-|$n {{ padRight 9 "Mana" }}: {{ padRight 12 "4216/3850"}}{{ padRight 9 "Endurance" }}: {{ padRight 13 "13200/13200"}}{{ padRight 8 "Acuity"}}: {{ .Acuity }}  {{ padRight 8 "Heart"}}: {{ .Heart }}   $2|
+|$n {{ padRight 9 "Health" }}: {{ padRight 12 .Health }}{{ padRight 9 "Willpower"}}: {{ padRight 13 .Willpower}}{{ padRight 8 "Force"}}: {{ .Force }}  {{ padRight 8 "Reflex"}}: {{ .Reflex }}   $2|
+|$n {{ padRight 9 "Mana" }}: {{ padRight 12 .Mana }}{{ padRight 9 "Endurance" }}: {{ padRight 13 .Endurance}}{{ padRight 8 "Acuity"}}: {{ .Acuity }}  {{ padRight 8 "Heart"}}: {{ .Heart }}   $2|
 |$n{{ repeat 77 " " }}$2|
 |$n Hunger  : reasonably full                    Sobriety : completely sober    $2|
 |$n Timeout : 10 minutes                                                        $2|
@@ -15,13 +15,4 @@ $2|$n {{ padRight 9 "Age" }}: {{ padRight 12 .Age }}{{ padRight 9 "Birthdate"}}:
 |$n   Holding: 0                      Unbound: 0                                $2|
 |$n   Packs  : 5731                   Bound  : 0                                $2|
 |$n   Banks  : 70000                  Bytes  : 0                                $2|
-|$n                                                                             $2|
-|$n                                                                             $2|
-+-$yOrganisations$2---------------------------------------------------------------+
-|$n $yCity$n                                                                        $2|
-|$n   Vel'Nath          : Rank 1 - Plebian                                      $2|
-|$n                                                                             $2|
-|$n $yClans$n                                                                       $2|
-|$n   The Nerds Army *            Space Cowboy Marinara                         $2|
-|$n   Nanites Taste Bad                                                         $2|
 +-----------------------------------------------------------------------------+$n

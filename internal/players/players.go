@@ -105,6 +105,11 @@ func (pm *PlayerManager) GetPlayerById(playerId uint64) (*PlayerRecord, error) {
 	if err := yaml.Unmarshal(data, &playerRecord); err != nil {
 		return nil, fmt.Errorf("failed to parse player file: %w", err)
 	}
+	//Validate the character - This sets up
+	//their character for use in game.
+	if !playerRecord.Char.Validate() {
+		return nil, fmt.Errorf("failed to validate the player file: %w", err)
+	}
 	//add it to our cache
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
