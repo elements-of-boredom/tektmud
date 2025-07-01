@@ -1,6 +1,7 @@
 package character
 
 import (
+	"strings"
 	"time"
 )
 
@@ -26,6 +27,19 @@ type Stats struct {
 	Heart  int `yaml:"heart"`
 }
 
+// % of 100 based resistance. 100 = immune
+type Resistances struct {
+	Fire        int `yaml:"fire"`
+	Cold        int `yaml:"cold"`
+	Electrical  int `yaml:"electrical"`
+	Blunt       int `yaml:"blunt"`
+	Slashing    int `yaml:"slashing"`
+	Poison      int `yaml:"poison"`
+	Radiation   int `yaml:"radiation"`
+	Sonic       int `yaml:"sonic"`
+	Suffocation int `yaml:"suffocation"` // Used for damage type when player cannot "breath"
+}
+
 type Character struct {
 	Id      uint64   `yaml:"id"`
 	Name    string   `yaml:"name"`
@@ -48,6 +62,7 @@ type Character struct {
 	Endurance    int                  `yaml:"endurance"`
 	MaxEndurance int                  `yaml:"max_endurance"`
 	ActionState  CharacterActionState `yaml:"action_state"`
+	Resistances  Resistances          `yaml:"resistances"`
 
 	//Location information
 	RoomId string `yaml:"room_id"`
@@ -96,6 +111,50 @@ func (c *Character) GetLocation() (areaId string, roomId string) {
 }
 func (c *Character) GetAdminContext() *AdminContext {
 	return c.AdminCtx
+}
+
+// Apply damage calculates the effect of an attack
+// and applies it to the character. Returns the amount of damage done.
+func (c *Character) ApplyDamage(amount int, damageType string) int {
+	//TODO Switch to enums??
+	var resistance int
+	switch strings.ToLower(damageType) {
+	case "fire":
+		resistance = c.Resistances.Fire
+	case "cold":
+		resistance = c.Resistances.Cold
+	case "electrical":
+		resistance = c.Resistances.Electrical
+	case "blunt":
+		resistance = c.Resistances.Blunt
+	case "slashing":
+		resistance = c.Resistances.Slashing
+	case "poison":
+		resistance = c.Resistances.Poison
+	case "radiation":
+		resistance = c.Resistances.Radiation
+	case "sonic":
+		resistance = c.Resistances.Sonic
+	case "suffocation":
+		resistance = c.Resistances.Suffocation
+	default:
+		resistance = 0
+	}
+	var actualDamage int
+	if resistance != 0 {
+		actualDamage = int(float32(amount) * (float32(100-resistance) / 100))
+	} else {
+		actualDamage = amount
+	}
+
+	//Don't allow to go below 0, or exceed max health
+	c.Hp = min(c.MaxHp, max(0, c.Hp-actualDamage))
+	if c.Hp == 0 {
+		c.ActionState = Downed
+	}
+
+	return amount
+
 }
 
 func (c *Character) SetXpTo(xp uint32) (levelChangedBy int) {
@@ -184,6 +243,9 @@ func (c *Character) Validate() bool {
 		c.Endurance = c.MaxEndurance
 		c.Willpower = c.MaxWillpower
 		c.ActionState = Standing
+
+		//TODO: Include racial resistances here?
+		c.Resistances = Resistances{}
 	}
 
 	return true

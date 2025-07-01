@@ -19,19 +19,6 @@ var (
 	mu sync.Mutex
 )
 
-// % of 100 based resistance. 100 = immune
-type Resistances struct {
-	Fire        int `yaml:"fire"`
-	Cold        int `yaml:"cold"`
-	Electrical  int `yaml:"electrical"`
-	Blunt       int `yaml:"blunt"`
-	Slashing    int `yaml:"slashing"`
-	Poison      int `yaml:"poison"`
-	Radiation   int `yaml:"radiation"`
-	Sonic       int `yaml:"sonic"`
-	Suffocation int `yaml:"suffocation"` // Used for damage type when player cannot "breath"
-}
-
 type Race struct {
 	Id      int         `yaml:"id"`
 	Name    string      `yaml:"name"`
